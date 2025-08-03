@@ -1,10 +1,9 @@
 from sqlmodel import Session, create_engine, select
 
-from app import crud
-from app.core.config import settings
-from app.models import User, UserCreate
-
-engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+import app.crud.auth.user as crud
+from app.config import settings
+from app.models.user import User, UserCreate
+from app.database_engine import engine
 
 
 # make sure all SQLModel models are imported (app.models) before initializing DB

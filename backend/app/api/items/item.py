@@ -4,10 +4,15 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
-from app.api.deps import CurrentUser, SessionDep
-from app.models import Item, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate, Message
+from app.utils.auth import CurrentUser, SessionDep
+from app.models.item import Item, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate
 
-router = APIRouter(prefix="/items", tags=["items"])
+from app.models.user import User
+from app.models.auth import TokenPayload
+from app.models.message import Message
+
+
+router = APIRouter(tags=["items"])
 
 
 @router.get("/", response_model=ItemsPublic)
@@ -17,7 +22,6 @@ def read_items(
     """
     Retrieve items.
     """
-
     if current_user.is_superuser:
         count_statement = select(func.count()).select_from(Item)
         count = session.exec(count_statement).one()

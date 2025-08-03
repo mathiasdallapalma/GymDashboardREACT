@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fastapi-template"
+version = "0.1.0"
+description = "FastAPI Template Project"
+authors = [{name = "Your Name", email = "your.email@example.com"}]
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlmodel",
+    "psycopg2-binary",
+    "pydantic-settings",
+    "python-multipart",
+    "passlib[bcrypt]",
+    "PyJWT",
+    "tenacity",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+    "pytest-cov",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]

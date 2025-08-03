@@ -1,6 +1,6 @@
 import secrets
 import warnings
-from typing import Annotated, Any, Literal
+from typing_extensions import Annotated, Any, Literal
 
 from pydantic import (
     AnyUrl,
@@ -31,21 +31,25 @@ class Settings(BaseSettings):
         env_ignore_empty=True,
         extra="ignore",
     )
+    APP_VERSION: str = "0.1.0"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    SECURITY_ALGORITHM:str ="HS256"
     FRONTEND_HOST: str = "http://localhost:5173"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
-    BACKEND_CORS_ORIGINS: Annotated[
+    CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_cors)
     ] = []
+    CORS_ORIGINS_REGEX: str | None = None
+    CORS_HEADERS: list[str] = ["*"]
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def all_cors_origins(self) -> list[str]:
-        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
+        return [str(origin).rstrip("/") for origin in self.CORS_ORIGINS] + [
             self.FRONTEND_HOST
         ]
 

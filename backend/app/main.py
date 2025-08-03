@@ -3,9 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from src.config import settings
-from api.auth.router import router as auth_router
-from src.posts.router import router as posts_router
+from app.config import settings
+#from app.api.auth.login.router import router as login_router
+from app.api.items.item import router as items_router
+from app.api.auth.login import router as login_router
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -27,8 +28,8 @@ def create_app() -> FastAPI:
     )
 
     # Routers
-    app.include_router(auth_router, prefix="/auth", tags=["auth"])
-    app.include_router(posts_router, prefix="/posts", tags=["posts"])
+    app.include_router(login_router, prefix=f"{settings.API_V1_STR}/login", tags=["login"])
+    app.include_router(items_router, prefix=f"{settings.API_V1_STR}/items", tags=["items"])
 
     # Exception handlers
     @app.exception_handler(Exception)

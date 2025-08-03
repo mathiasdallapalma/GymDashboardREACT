@@ -1,34 +1,39 @@
 from datetime import timedelta
 from typing import Annotated, Any
-
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
-from fastapi.security import OAuth2PasswordRequestForm
+from app.utils.auth import CurrentUser, SessionDep, get_current_active_superuser
 
-from app import crud
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
-from app import security
+from app.models.user import  UserPublic
+from app.models.message import Message
+from app.models.auth import NewPassword, Token
+
+from app.security import create_access_token
+
+from app.crud.auth import user as crud_user
+
 from app.config import settings
-from app.security import get_password_hash
-from app.models import Message, NewPassword, Token, UserPublic
-from app.utils.auth_utils import (
-    generate_password_reset_token,
-    generate_reset_password_email,
-    send_email,
-    verify_password_reset_token,
-)
+from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter(tags=["login"])
 
+@router.get("/", response_model=Any)
+def login() -> Any:
+    """
+    Placeholder for login endpoint.
+    This can be used to redirect to a frontend login page or similar.
+    """
+    return {"message": "Login endpoint is active. Implement your login logic here."}
 
-@router.post("/login/access-token")
+
+@router.post("/access-token")
 def login_access_token(
     session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> Token:
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = crud.authenticate(
+    user = crud_user.authenticate(
         session=session, email=form_data.username, password=form_data.password
     )
     if not user:
@@ -37,13 +42,13 @@ def login_access_token(
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return Token(
-        access_token=security.create_access_token(
+        access_token=create_access_token(
             user.id, expires_delta=access_token_expires
         )
     )
 
 
-@router.post("/login/test-token", response_model=UserPublic)
+@router.post("/test-token", response_model=UserPublic)
 def test_token(current_user: CurrentUser) -> Any:
     """
     Test access token
@@ -56,7 +61,7 @@ def recover_password(email: str, session: SessionDep) -> Message:
     """
     Password Recovery
     """
-    user = crud.get_user_by_email(session=session, email=email)
+    user = crud_user.get_user_by_email(session=session, email=email)
 
     if not user:
         raise HTTPException(
@@ -83,7 +88,7 @@ def reset_password(session: SessionDep, body: NewPassword) -> Message:
     email = verify_password_reset_token(token=body.token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
-    user = crud.get_user_by_email(session=session, email=email)
+    user = crud_user.get_user_by_email(session=session, email=email)
     if not user:
         raise HTTPException(
             status_code=404,
@@ -107,7 +112,7 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
     """
     HTML Content for Password Recovery
     """
-    user = crud.get_user_by_email(session=session, email=email)
+    user = crud_user.get_user_by_email(session=session, email=email)
 
     if not user:
         raise HTTPException(

@@ -9,7 +9,7 @@ from app.crud.auth.user import create_user
 from app.models.user import UserCreate
 from app.tests.utils.user import user_authentication_headers
 from app.tests.utils.utils import random_email, random_lower_string
-from app.utils.mail import generate_password_reset_token
+from app.utils.email import generate_password_reset_token
 
 
 def test_get_access_token(client: TestClient) -> None:

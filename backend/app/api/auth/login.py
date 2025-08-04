@@ -2,7 +2,12 @@ from datetime import timedelta
 from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
-from app.utils.auth import CurrentUser, SessionDep, get_current_active_superuser
+
+from app.utils.auth import CurrentUser, SessionDep, get_current_active_superuser,verify_password_reset_token
+from app.utils.email import send_email, generate_reset_password_email, generate_password_reset_token
+from app.security import get_password_hash
+
+
 
 from app.models.user import  UserPublic
 from app.models.message import Message
@@ -15,7 +20,7 @@ from app.crud.auth import user as crud_user
 from app.config import settings
 from fastapi.security import OAuth2PasswordRequestForm
 
-router = APIRouter(tags=["login"])
+router = APIRouter(tags=["auth"])
 
 @router.get("/", response_model=Any)
 def login() -> Any:
@@ -26,7 +31,7 @@ def login() -> Any:
     return {"message": "Login endpoint is active. Implement your login logic here."}
 
 
-@router.post("/access-token")
+@router.post("/login/access-token")
 def login_access_token(
     session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> Token:
@@ -48,7 +53,7 @@ def login_access_token(
     )
 
 
-@router.post("/test-token", response_model=UserPublic)
+@router.post("/login/test-token", response_model=UserPublic)
 def test_token(current_user: CurrentUser) -> Any:
     """
     Test access token

@@ -5,7 +5,8 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, delete
 
 from app.config import settings
-from app.database import engine, init_db
+from app.database_engine import engine
+from app.database import init_db
 from app.main import app
 from app.models.item import Item
 from app.models.user import User

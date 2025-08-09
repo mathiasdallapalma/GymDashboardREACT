@@ -67,6 +67,7 @@ export type UserCreate = {
   is_superuser?: boolean
   full_name?: string | null
   password: string
+  role?: string | null
 }
 
 export type UserPublic = {
@@ -75,6 +76,7 @@ export type UserPublic = {
   is_superuser?: boolean
   full_name?: string | null
   id: string
+  role:string
 }
 
 export type UserRegister = {

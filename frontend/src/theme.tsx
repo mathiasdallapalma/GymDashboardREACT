@@ -1,5 +1,6 @@
 import { createSystem, defaultConfig } from "@chakra-ui/react"
 import { buttonRecipe } from "./theme/button.recipe"
+import { useColorModeValue } from "./components/ui/color-mode"
 
 export const system = createSystem(defaultConfig, {
   globalCss: {
@@ -21,6 +22,13 @@ export const system = createSystem(defaultConfig, {
       colors: {
         ui: {
           main: { value: "#009688" },
+        },
+        custom: {
+          white: { value: "#FFFFFF" },
+          black: { value: "#232323" },
+          limeGreen: { value: "#E2F163" },
+          purple: { value: "#896CFE" },
+          lightPurple: { value: "#B3A0FF" },
         },
       },
     },

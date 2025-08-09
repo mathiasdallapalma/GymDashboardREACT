@@ -1,4 +1,8 @@
-import { Container, Image, Input, Text } from "@chakra-ui/react"
+import { Container, Image } from "@chakra-ui/react"
+import {
+  useColorModeValue,
+} from "@/components/ui/color-mode"
+
 import {
   Link as RouterLink,
   createFileRoute,
@@ -8,13 +12,28 @@ import { type SubmitHandler, useForm } from "react-hook-form"
 import { FiLock, FiMail } from "react-icons/fi"
 
 import type { Body_login_login_access_token as AccessToken } from "@/client"
-import { Button } from "@/components/ui/button"
-import { Field } from "@/components/ui/field"
+
+
 import { InputGroup } from "@/components/ui/input-group"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import Logo from "/assets/images/fastapi-logo.svg"
 import { emailPattern, passwordRules } from "../utils"
+
+import {
+  Box,
+  Flex,
+  Heading,
+  Text,
+  Input,
+  Button,
+  Link,
+  IconButton,
+  Stack,
+  useBreakpointValue,
+  Field
+} from '@chakra-ui/react';
+import { FaGoogle, FaFacebook, FaFingerprint } from 'react-icons/fa';
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -66,62 +85,142 @@ function Login() {
     }
   }
 
+  const containerW = useBreakpointValue({ base: '100%', md: '400px' });
+
+  // Define colors for light and dark modes
+
   return (
     <>
-      <Container
+
+      <Flex
+        minH="100vh"
+        align="center"
+        justify="center"
+        bg="gray.900"
+        color="white"
+        flexDirection="column"
+        p={4}
         as="form"
         onSubmit={handleSubmit(onSubmit)}
-        h="100vh"
-        maxW="sm"
-        alignItems="stretch"
-        justifyContent="center"
-        gap={4}
-        centerContent
       >
-        <Image
-          src={Logo}
-          alt="FastAPI logo"
-          height="auto"
-          maxW="2xs"
-          alignSelf="center"
-          mb={4}
-        />
-        <Field
-          invalid={!!errors.username}
-          errorText={errors.username?.message || !!error}
-        >
-          <InputGroup w="100%" startElement={<FiMail />}>
-            <Input
-              id="username"
-              {...register("username", {
-                required: "Username is required",
-                pattern: emailPattern,
-              })}
-              placeholder="Email"
-              type="email"
+        {/* Welcome Text */}
+        <Box p={4} textAlign="center">
+          <Heading size="lg" mb={2}>
+            Welcome
+          </Heading>
+          <Text fontSize="sm" color="gray.300" w="80%" mx="auto">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+          </Text>
+        </Box>
+
+        {/* Form Section */}
+        <Box p={6} w="107%" m={10}>
+          <Stack spacing={4}>
+            <Field.Root
+              invalid={!!errors.username}
+            //errorText={errors.username?.message || !!error}
+            >
+              <Field.Label fontSize="sm" >
+                Username or email
+              </Field.Label>
+              <InputGroup w="100%" startElement={<FiMail />}>
+                <Input
+                  id="username"
+                  {...register("username", {
+                    required: "Username is required",
+                    pattern: emailPattern,
+                  })}
+                  placeholder="example@example.com"
+                  type="email"
+                  bg="white"
+                  color="gray.800"
+                  borderRadius={15}
+                />
+              </InputGroup>
+            </Field.Root>
+
+            <Field.Root>
+              <Field.Label fontSize="sm">
+                Password
+              </Field.Label>
+              <PasswordInput
+                type="password"
+                startElement={<FiLock />}
+                {...register("password", passwordRules())}
+                placeholder="************"
+                errors={errors}
+                bg="white"
+                color="gray.800"
+                borderRadius={15}
+              />
+              <Flex w="100%" justify="flex-end">
+                <Link fontSize="xs" color="gray.600" href="/recover-password" textAlign="right">
+                  Forgot Password?
+                </Link>
+              </Flex>
+            </Field.Root>
+          </Stack>
+        </Box>
+
+        {/* Action Buttons */}
+        <Box p={4} textAlign="center">
+          <Button
+            type="submit"
+            w="100%"
+            maxW="200px"
+            mx="auto"
+            borderRadius="full"
+            colorScheme="gray"
+            variant="surface"
+          >
+            Log In
+          </Button>
+
+          <Text fontSize="xs" color="gray.400" mt={3}>
+            or sign up with
+          </Text>
+
+          <Flex justify="center" mt={2} gap={4}>
+            <IconButton
+              as="a"
+              href="/auth/google"
+              aria-label="Google"
+              icon={<FaGoogle />}
+              borderRadius="full"
+              bg="white"
+              color="gray.800"
+              boxShadow="md"
             />
-          </InputGroup>
-        </Field>
-        <PasswordInput
-          type="password"
-          startElement={<FiLock />}
-          {...register("password", passwordRules())}
-          placeholder="Password"
-          errors={errors}
-        />
-        <RouterLink to="/recover-password" className="main-link">
-          Forgot Password?
-        </RouterLink>
-        <Button variant="solid" type="submit" loading={isSubmitting} size="md">
-          Log In
-        </Button>
-        <Text>
-          Don't have an account?{" "}
-          <RouterLink to="/signup" className="main-link">
-            Sign Up
-          </RouterLink>
-        </Text>
-      </Container>
+            <IconButton
+              as="a"
+              href="/auth/facebook"
+              aria-label="Facebook"
+              icon={<FaFacebook />}
+              borderRadius="full"
+              bg="white"
+              color="gray.800"
+              boxShadow="md"
+            />
+            <IconButton
+              as="a"
+              href="/auth/fingerprint"
+              aria-label="Fingerprint"
+              icon={<FaFingerprint />}
+              borderRadius="full"
+              bg="white"
+              color="gray.800"
+              boxShadow="md"
+            />
+          </Flex>
+          <Text fontSize="sm" color="gray.400" mt={4}>
+            Don’t have an account?{' '}
+            <Link color="yellow.400" fontWeight="bold" href="/signup">
+              Sign Up
+            </Link>
+          </Text>
+        </Box>
+
+      </Flex>
     </>
   )
 }

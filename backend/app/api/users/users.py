@@ -55,6 +55,8 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
     """
     Create new user.
     """
+    print(f"session: {session}")
+    print(f"user_in: {user_in}")
     user = crud_user.get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(

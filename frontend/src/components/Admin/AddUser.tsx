@@ -53,6 +53,7 @@ const AddUser = () => {
       confirm_password: "",
       is_superuser: false,
       is_active: false,
+      role: "user", // Default role
     },
   })
 
@@ -166,6 +167,25 @@ const AddUser = () => {
                   placeholder="Password"
                   type="password"
                 />
+              </Field>
+
+              <Field
+                required
+                invalid={!!errors.role}
+                errorText={errors.role?.message}
+                label="Role"
+              >
+                <select
+                  id="role"
+                  {...register("role", {
+                    required: "Role is required",
+                  })}
+                  placeholder="Select role"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                  <option value="moderator">Moderator</option>
+                </select>
               </Field>
             </VStack>
 

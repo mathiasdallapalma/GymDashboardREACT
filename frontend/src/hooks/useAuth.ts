@@ -5,7 +5,7 @@ import { useState } from "react"
 import {
   type Body_login_login_access_token as AccessToken,
   type ApiError,
-  LoginService,
+  AuthService,
   type UserPublic,
   type UserRegister,
   UsersService,
@@ -22,13 +22,13 @@ const useAuth = () => {
   const queryClient = useQueryClient()
   const { data: user } = useQuery<UserPublic | null, Error>({
     queryKey: ["currentUser"],
-    queryFn: UsersService.readUserMe,
+    queryFn: UsersService.readUserMeApiV1,
     enabled: isLoggedIn(),
   })
 
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegister) =>
-      UsersService.registerUser({ requestBody: data }),
+      UsersService.registerUserApiV1({ requestBody: data }),
 
     onSuccess: () => {
       navigate({ to: "/login" })
@@ -42,7 +42,7 @@ const useAuth = () => {
   })
 
   const login = async (data: AccessToken) => {
-    const response = await LoginService.loginAccessToken({
+    const response = await AuthService.loginAccessTokenApiV1({
       formData: data,
     })
     localStorage.setItem("access_token", response.access_token)

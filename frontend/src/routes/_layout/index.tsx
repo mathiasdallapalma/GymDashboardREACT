@@ -6,20 +6,19 @@ import useAuth from "@/hooks/useAuth"
 
 import { CgGym } from "react-icons/cg";
 import { GiProgression } from "react-icons/gi";
+import { RiUser3Fill } from "react-icons/ri";
 
-import Appearance from "@/components/UserSettings/Appearance"
-import ChangePassword from "@/components/UserSettings/ChangePassword"
-import DeleteAccount from "@/components/UserSettings/DeleteAccount"
-import UserInformation from "@/components/UserSettings/UserInformation"
+
 import WorkoutSection from "@/components/Index/WorkoutSection"
 import ProgressSection from "@/components/Index/ProgressSection";
+import ProfileSection from "@/components/Index/ProfileSection";
 
 
 
 const tabsConfig = [
   { value: "workout", title: "WorkOut", icon: CgGym, component: WorkoutSection },
   { value: "progress", title: "Progress", icon: GiProgression, component: ProgressSection },
-
+  { value: "profile", title: "Profile", icon: RiUser3Fill, component: ProfileSection },
 ]
 
 export const Route = createFileRoute("/_layout/")({
@@ -39,14 +38,16 @@ function Home() {
           <Text>Welcome back, nice to see you again!</Text>
         </Box>
 
-        <Tabs.Root defaultValue="my-profile" variant="subtle">
+        <Tabs.Root defaultValue="workout" variant="line">
           <Tabs.List
             display="flex"
             flexDirection="row"
             alignItems="center"
             justifyContent="center"
-            gap={4} // Add spacing between tabs
+            gap={1} // Add spacing between tabs
             p={1} // Add padding to the tabs list
+            color="lime"
+            borderBottom="none"
           >
             {tabsConfig.map((tab, index) => (
               <>
@@ -57,28 +58,28 @@ function Home() {
                   flexDirection="column"
                   alignItems="center"
                   justifyContent="center"
-                  gap={2} // Add spacing between the icon and text
+                  gap={1} // Add spacing between the icon and text
                   minH="80px" // Ensure enough height for the icon and text
+                  bg="transparent"
+                  color="purple.400"
+                  _selected={{
+                    color: "lime",
+                    
+                  }}
+
+                  _before={{  bg: "lime" }}
                 >
-                  <IconButton
-                    aria-label={tab.title}
-                    size="lg"
-                    colorScheme="teal"
-                    variant="ghost"
-                    flexDir="column"
-                  >
-                    <tab.icon size="24px" /> {/* Adjust icon size */}
-                  </IconButton>
-                  <Text fontSize="sm">{tab.title}</Text>
+                  <tab.icon size="48px" /> {/* Adjust icon size */}
+                  <Text fontSize="0.5rem">{tab.title}</Text>
                 </Tabs.Trigger>
                 {index < tabsConfig.length - 1 && (
-                  <Separator orientation="vertical" height="8" />
+                  <Separator orientation="vertical" height="12" size="lg" />
                 )}
               </>
             ))}
           </Tabs.List>
           {tabsConfig.map((tab) => (
-            <Tabs.Content key={tab.value} value={tab.value}>
+            <Tabs.Content key={tab.value} value={tab.value} pt="0">
               <tab.component />
             </Tabs.Content>
           ))}

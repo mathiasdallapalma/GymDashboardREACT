@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -20,31 +22,39 @@ def user_authentication_headers(
     return headers
 
 
-def create_random_user(db: Session) -> User:
+def create_random_user(db: Any) -> User:
+    # Import here to avoid circular imports
+    from app.database_engine import firestore_client
+    import app.crud.auth.user as crud
+    
     email = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=email, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud.create_user(session=firestore_client, user_create=user_in)
     return user
 
 
 def authentication_token_from_email(
-    *, client: TestClient, email: str, db: Session
+    *, client: TestClient, email: str, db: Any
 ) -> dict[str, str]:
     """
     Return a valid token for the user with given email.
 
     If the user doesn't exist it is created first.
     """
-    password = random_lower_string()
-    user = crud.get_user_by_email(session=db, email=email)
+    # Import here to avoid circular imports
+    from app.database_engine import firestore_client
+    import app.crud.auth.user as crud
+    
+    # Use firestore_client instead of db session
+    user = crud.get_user_by_email(session=firestore_client, email=email)
     if not user:
+        # Create user with a known password
+        password = "testpassword123"
         user_in_create = UserCreate(email=email, password=password)
-        user = crud.create_user(session=db, user_create=user_in_create)
+        user = crud.create_user(session=firestore_client, user_create=user_in_create)
+        return user_authentication_headers(client=client, email=email, password=password)
     else:
-        user_in_update = UserUpdate(password=password)
-        if not user.id:
-            raise Exception("User id not set")
-        user = crud.update_user(session=db, db_user=user, user_in=user_in_update)
-
-    return user_authentication_headers(client=client, email=email, password=password)
+        # User exists, but we don't know the password. For tests, we'll use the default test password
+        # This assumes the user was created in previous tests with this password
+        return user_authentication_headers(client=client, email=email, password="testpassword123")

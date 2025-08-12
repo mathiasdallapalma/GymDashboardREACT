@@ -55,6 +55,13 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
+    
+    # Firebase Configuration
+    USE_FIREBASE: bool = True
+    FIREBASE_PROJECT_ID: str | None = None
+    FIREBASE_CREDENTIALS_PATH: str | None = None
+    
+    # PostgreSQL Configuration (Legacy)
     POSTGRES_SERVER: str
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str

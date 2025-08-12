@@ -72,7 +72,10 @@ def test_recovery_password_user_not_exits(
     assert r.status_code == 404
 
 
-def test_reset_password(client: TestClient, db: Session) -> None:
+def test_reset_password(client: TestClient, db) -> None:
+    # Import here to avoid circular imports  
+    from app.database_engine import firestore_client
+    
     email = random_email()
     password = random_lower_string()
     new_password = random_lower_string()
@@ -84,7 +87,7 @@ def test_reset_password(client: TestClient, db: Session) -> None:
         is_active=True,
         is_superuser=False,
     )
-    user = create_user(session=db, user_create=user_create)
+    user = create_user(session=firestore_client, user_create=user_create)
     token = generate_password_reset_token(email=email)
     headers = user_authentication_headers(client=client, email=email, password=password)
     data = {"new_password": new_password, "token": token}
@@ -98,8 +101,12 @@ def test_reset_password(client: TestClient, db: Session) -> None:
     assert r.status_code == 200
     assert r.json() == {"message": "Password updated successfully"}
 
-    db.refresh(user)
-    assert verify_password(new_password, user.hashed_password)
+    # Verify password was updated by trying to authenticate with new password
+    from app.crud.auth.user import authenticate
+    updated_user = authenticate(session=firestore_client, email=email, password=new_password)
+    assert updated_user is not None
+    assert updated_user.email == email
+
 
 
 def test_reset_password_invalid_token(

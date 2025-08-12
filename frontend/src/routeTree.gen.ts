@@ -17,9 +17,15 @@ import { Route as RecoverPasswordImport } from './routes/recover-password'
 import { Route as LoginImport } from './routes/login'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
+import { Route as LayoutTemplateImport } from './routes/_layout/template'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
+import { Route as LayoutProfileImport } from './routes/_layout/profile'
+import { Route as LayoutPrivacyImport } from './routes/_layout/privacy'
 import { Route as LayoutItemsImport } from './routes/_layout/items'
+import { Route as LayoutHelpImport } from './routes/_layout/help'
+import { Route as LayoutExercisesImport } from './routes/_layout/exercises'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
+import { Route as LayoutActivityImport } from './routes/_layout/activity'
 
 // Create/Update Routes
 
@@ -53,8 +59,23 @@ const LayoutIndexRoute = LayoutIndexImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutTemplateRoute = LayoutTemplateImport.update({
+  path: '/template',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
 const LayoutSettingsRoute = LayoutSettingsImport.update({
   path: '/settings',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutProfileRoute = LayoutProfileImport.update({
+  path: '/profile',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutPrivacyRoute = LayoutPrivacyImport.update({
+  path: '/privacy',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -63,8 +84,23 @@ const LayoutItemsRoute = LayoutItemsImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutHelpRoute = LayoutHelpImport.update({
+  path: '/help',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutExercisesRoute = LayoutExercisesImport.update({
+  path: '/exercises',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
 const LayoutAdminRoute = LayoutAdminImport.update({
   path: '/admin',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutActivityRoute = LayoutActivityImport.update({
+  path: '/activity',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -92,16 +128,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupImport
       parentRoute: typeof rootRoute
     }
+    '/_layout/activity': {
+      preLoaderRoute: typeof LayoutActivityImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/admin': {
       preLoaderRoute: typeof LayoutAdminImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/exercises': {
+      preLoaderRoute: typeof LayoutExercisesImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/help': {
+      preLoaderRoute: typeof LayoutHelpImport
       parentRoute: typeof LayoutImport
     }
     '/_layout/items': {
       preLoaderRoute: typeof LayoutItemsImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/privacy': {
+      preLoaderRoute: typeof LayoutPrivacyImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/profile': {
+      preLoaderRoute: typeof LayoutProfileImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/settings': {
       preLoaderRoute: typeof LayoutSettingsImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/template': {
+      preLoaderRoute: typeof LayoutTemplateImport
       parentRoute: typeof LayoutImport
     }
     '/_layout/': {
@@ -115,9 +175,15 @@ declare module '@tanstack/react-router' {
 
 export const routeTree = rootRoute.addChildren([
   LayoutRoute.addChildren([
+    LayoutActivityRoute,
     LayoutAdminRoute,
+    LayoutExercisesRoute,
+    LayoutHelpRoute,
     LayoutItemsRoute,
+    LayoutPrivacyRoute,
+    LayoutProfileRoute,
     LayoutSettingsRoute,
+    LayoutTemplateRoute,
     LayoutIndexRoute,
   ]),
   LoginRoute,

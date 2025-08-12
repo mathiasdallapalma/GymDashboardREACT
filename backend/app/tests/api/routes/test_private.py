@@ -1,11 +1,9 @@
 from fastapi.testclient import TestClient
-from sqlmodel import Session, select
 
 from app.config import settings
-from app.models.user import User
 
 
-def test_create_user(client: TestClient, db: Session) -> None:
+def test_create_user(client: TestClient, db) -> None:
     r = client.post(
         f"{settings.API_V1_STR}/admin/users/",
         json={
@@ -19,8 +17,12 @@ def test_create_user(client: TestClient, db: Session) -> None:
 
     data = r.json()
 
-    user = db.exec(select(User).where(User.id == data["id"])).first()
-
-    assert user
-    assert user.email == "pollo@listo.com"
-    assert user.full_name == "Pollo Listo"
+    # Verify user was created in Firestore
+    from app.database_engine import firestore_client
+    users_ref = firestore_client.collection("users")
+    doc = users_ref.document(data["id"]).get()
+    
+    assert doc.exists
+    user_data = doc.to_dict()
+    assert user_data["email"] == "pollo@listo.com"
+    assert user_data["full_name"] == "Pollo Listo"

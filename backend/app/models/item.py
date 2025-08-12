@@ -1,44 +1,38 @@
 import uuid
-
-from pydantic import EmailStr
-from sqlmodel import Field, Relationship, SQLModel
-from app.models.user import User
-
-
+from typing import Optional
+from pydantic import BaseModel
+from google.cloud.firestore import DocumentReference
 
 
 # Shared properties
-class ItemBase(SQLModel):
-    title: str = Field(min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=255)
+class ItemBase(BaseModel):
+    title: str
+    description: Optional[str] = None
 
 
-# Properties to receive on item creation
+# For creating an item
 class ItemCreate(ItemBase):
     pass
 
 
-# Properties to receive on item update
+# For updating an item
 class ItemUpdate(ItemBase):
-    title: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
+    title: Optional[str] = None
+    description: Optional[str] = None
 
 
-# Database model, database table inferred from class name
-class Item(ItemBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    owner_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE"
-    )
-    owner: User | None = Relationship(back_populates="items")
+# Firestore database model
+class Item(ItemBase):
+    id: str = str(uuid.uuid4())
+    owner_id: str  # Reference to User document
 
 
-# Properties to return via API, id is always required
+# Public API representation
 class ItemPublic(ItemBase):
-    id: uuid.UUID
-    owner_id: uuid.UUID
+    id: str
+    owner_id: str
 
 
-class ItemsPublic(SQLModel):
+class ItemsPublic(BaseModel):
     data: list[ItemPublic]
     count: int
-

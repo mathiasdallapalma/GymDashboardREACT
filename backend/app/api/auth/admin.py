@@ -25,14 +25,23 @@ def create_user(user_in: AdminUserCreate, session: SessionDep) -> Any:
     """
     Create a new user.
     """
+    import uuid
+    
+    # Create user data for Firestore
+    user_data = {
+        "id": str(uuid.uuid4()),
+        "email": user_in.email,
+        "full_name": user_in.full_name,
+        "hashed_password": get_password_hash(user_in.password),
+        "is_active": True,
+        "is_superuser": False,
+        "role": "user"
+    }
 
-    user = User(
-        email=user_in.email,
-        full_name=user_in.full_name,
-        hashed_password=get_password_hash(user_in.password),
-    )
+    # Add to Firestore
+    users_ref = session.collection("users")
+    doc_ref = users_ref.document(user_data["id"])
+    doc_ref.set(user_data)
 
-    session.add(user)
-    session.commit()
-
-    return user
+    # Return User object
+    return User(**user_data)

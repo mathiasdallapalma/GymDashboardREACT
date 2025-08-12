@@ -9,6 +9,7 @@ from app.api.items.item import router as items_router
 from app.api.auth.login import router as login_router
 from app.api.auth.admin import router as admin_router
 from app.api.users.users import router as users_router
+from app.api.exercies.exercise import router as exercises_router
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     app.include_router(users_router, prefix=f"{settings.API_V1_STR}/users", tags=["users"])
     
     app.include_router(items_router, prefix=f"{settings.API_V1_STR}/items", tags=["items"])
+    app.include_router(exercises_router, prefix=f"{settings.API_V1_STR}/exercises", tags=["exercises"])
     
 
     # Exception handlers

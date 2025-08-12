@@ -39,13 +39,26 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
     Retrieve users.
     """
 
-    count_statement = select(func.count()).select_from(User)
-    count = session.exec(count_statement).one()
+    if not session:
+        raise HTTPException(status_code=500, detail="Database not available")
 
-    statement = select(User).offset(skip).limit(limit)
-    users = session.exec(statement).all()
+    users_ref = session.collection("users")
+
+    # Firestore has no offset, so fetch skip + limit, then slice
+    docs = list(users_ref.limit(skip + limit).stream())
+    users_docs = docs[skip:]
+
+    all_docs = list(users_ref.stream())
+    count = len(all_docs)
+
+    users = []
+    for doc in users_docs:
+        user_data = doc.to_dict()
+        user_data["id"] = doc.id
+        users.append(UserPublic(**user_data))
 
     return UsersPublic(data=users, count=count)
+
 
 
 @router.post(
@@ -84,19 +97,31 @@ def update_user_me(
     """
     Update own user.
     """
+    users_ref = session.collection("users")
 
     if user_in.email:
-        existing_user = crud_user.get_user_by_email(session=session, email=user_in.email)
-        if existing_user and existing_user.id != current_user.id:
-            raise HTTPException(
-                status_code=409, detail="User with this email already exists"
-            )
+        # Check if email already exists for another user
+        query = users_ref.where("email", "==", user_in.email).stream()
+        for doc in query:
+            if doc.id != str(current_user.id):
+                raise HTTPException(
+                    status_code=409, detail="User with this email already exists"
+                )
+                break
+
     user_data = user_in.model_dump(exclude_unset=True)
-    current_user.sqlmodel_update(user_data)
-    session.add(current_user)
-    session.commit()
-    session.refresh(current_user)
-    return current_user
+    user_doc_ref = users_ref.document(str(current_user.id))
+
+    # Update user document with new data
+    user_doc_ref.update(user_data)
+
+    # Fetch updated document to return fresh data
+    updated_doc = user_doc_ref.get()
+    updated_user_data = updated_doc.to_dict()
+    updated_user_data["id"] = updated_doc.id
+
+    return UserPublic(**updated_user_data)
+
 
 
 @router.patch("/me/password", response_model=Message)
@@ -106,16 +131,21 @@ def update_password_me(
     """
     Update own password.
     """
+    # Verify current password
     if not verify_password(body.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect password")
+
+    # Prevent same password reuse
     if body.current_password == body.new_password:
         raise HTTPException(
             status_code=400, detail="New password cannot be the same as the current one"
         )
+
+    # Hash and update
     hashed_password = get_password_hash(body.new_password)
-    current_user.hashed_password = hashed_password
-    session.add(current_user)
-    session.commit()
+    users_ref = session.collection("users").document(str(current_user.id))
+    users_ref.update({"hashed_password": hashed_password})
+
     return Message(message="Password updated successfully")
 
 
@@ -159,13 +189,23 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
 
 @router.get("/{user_id}", response_model=UserPublic)
 def read_user_by_id(
-    user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
+    user_id: str, session: SessionDep, current_user: CurrentUser
 ) -> Any:
     """
     Get a specific user by id.
     """
-    user = session.get(User, user_id)
-    if user == current_user:
+    # Get user from Firestore
+    users_ref = session.collection("users")
+    doc = users_ref.document(user_id).get()
+    
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_data = doc.to_dict()
+    user_data["id"] = doc.id
+    user = User(**user_data)
+    
+    if user.id == current_user.id:
         return user
     if not current_user.is_superuser:
         raise HTTPException(

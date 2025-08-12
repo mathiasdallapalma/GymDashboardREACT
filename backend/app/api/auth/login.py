@@ -20,7 +20,8 @@ from app.crud.auth import user as crud_user
 from app.config import settings
 from fastapi.security import OAuth2PasswordRequestForm
 
-router = APIRouter(tags=["auth"])
+# Use 'login' tag so the generated client exposes LoginService
+router = APIRouter(tags=["login"])
 
 @router.get("/", response_model=Any)
 def login() -> Any:
@@ -101,10 +102,13 @@ def reset_password(session: SessionDep, body: NewPassword) -> Message:
         )
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+    
+    # Update password in Firestore
     hashed_password = get_password_hash(password=body.new_password)
-    user.hashed_password = hashed_password
-    session.add(user)
-    session.commit()
+    users_ref = session.collection("users")
+    doc_ref = users_ref.document(user.id)
+    doc_ref.update({"hashed_password": hashed_password})
+    
     return Message(message="Password updated successfully")
 
 

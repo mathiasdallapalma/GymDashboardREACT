@@ -1,7 +1,7 @@
 import uuid
-from enum import Enum  # Added for defining roles
-from pydantic import EmailStr
-from sqlmodel import Field, Relationship, SQLModel
+from enum import Enum
+from typing import List, Optional
+from pydantic import BaseModel, EmailStr
 
 
 # Define possible roles
@@ -12,56 +12,57 @@ class UserRole(str, Enum):
 
 
 # Shared properties
-class UserBase(SQLModel):
-    email: EmailStr = Field(unique=True, index=True, max_length=255)
+class UserBase(BaseModel):
+    email: EmailStr
     is_active: bool = True
     is_superuser: bool = False
-    full_name: str | None = Field(default=None, max_length=255)
-    role: UserRole = Field(default=UserRole.USER)  # Added role field
+    full_name: Optional[str] = None
+    role: UserRole = UserRole.USER
 
 
-# Properties to receive via API on creation
+# For creating a user
 class UserCreate(UserBase):
-    password: str = Field(min_length=8, max_length=40)
+    password: str
 
 
-class UserRegister(SQLModel):
-    email: EmailStr = Field(max_length=255)
-    password: str = Field(min_length=8, max_length=40)
-    full_name: str | None = Field(default=None, max_length=255)
-    role: UserRole = Field(default=UserRole.USER)  # Added role field
+# For registration
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: Optional[str] = None
+    role: UserRole = UserRole.USER
 
 
-# Properties to receive via API on update, all are optional
+# For updating user details
 class UserUpdate(UserBase):
-    email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore
-    password: str | None = Field(default=None, min_length=8, max_length=40)
-    role: UserRole | None = Field(default=None)  # Added optional role field
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    role: Optional[UserRole] = None
 
 
-class UserUpdateMe(SQLModel):
-    full_name: str | None = Field(default=None, max_length=255)
-    email: EmailStr | None = Field(default=None, max_length=255)
+# For updating own account
+class UserUpdateMe(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 
-class UpdatePassword(SQLModel):
-    current_password: str = Field(min_length=8, max_length=40)
-    new_password: str = Field(min_length=8, max_length=40)
+# For password changes
+class UpdatePassword(BaseModel):
+    current_password: str
+    new_password: str
 
 
-# Database model, database table inferred from class name
-class User(UserBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+# Firestore database model
+class User(UserBase):
+    id: str = str(uuid.uuid4())
     hashed_password: str
-    items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
 
 
-# Properties to return via API, id is always required
+# Public API representation
 class UserPublic(UserBase):
-    id: uuid.UUID
+    id: str
 
 
-class UsersPublic(SQLModel):
+class UsersPublic(BaseModel):
     data: list[UserPublic]
     count: int
-

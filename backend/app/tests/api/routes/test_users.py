@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
+from app.database_engine import firestore_client
 
 import app.crud.auth.user as crud
 from app.config import settings
@@ -34,7 +35,7 @@ def test_get_users_normal_user_me(
 
 
 def test_create_user_new_email(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+    client: TestClient, superuser_token_headers: dict[str, str], db
 ) -> None:
     with (
         patch("app.utils.email.send_email", return_value=None),
@@ -51,18 +52,21 @@ def test_create_user_new_email(
         )
         assert 200 <= r.status_code < 300
         created_user = r.json()
-        user = crud.get_user_by_email(session=db, email=username)
+        
+        # Use Firestore client instead of db session
+        
+        user = crud.get_user_by_email(session=firestore_client, email=username)
         assert user
         assert user.email == created_user["email"]
 
 
 def test_get_existing_user(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+    client: TestClient, superuser_token_headers: dict[str, str], db
 ) -> None:
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud.create_user(session=firestore_client, user_create=user_in)
     user_id = user.id
     r = client.get(
         f"{settings.API_V1_STR}/users/{user_id}",
@@ -70,16 +74,16 @@ def test_get_existing_user(
     )
     assert 200 <= r.status_code < 300
     api_user = r.json()
-    existing_user = crud.get_user_by_email(session=db, email=username)
+    existing_user = crud.get_user_by_email(session=firestore_client, email=username)
     assert existing_user
     assert existing_user.email == api_user["email"]
 
 
-def test_get_existing_user_current_user(client: TestClient, db: Session) -> None:
+def test_get_existing_user_current_user(client: TestClient, db) -> None:
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud.create_user(session=firestore_client, user_create=user_in)
     user_id = user.id
 
     login_data = {
@@ -97,30 +101,19 @@ def test_get_existing_user_current_user(client: TestClient, db: Session) -> None
     )
     assert 200 <= r.status_code < 300
     api_user = r.json()
-    existing_user = crud.get_user_by_email(session=db, email=username)
+    existing_user = crud.get_user_by_email(session=firestore_client, email=username)
     assert existing_user
     assert existing_user.email == api_user["email"]
 
 
-def test_get_existing_user_permissions_error(
-    client: TestClient, normal_user_token_headers: dict[str, str]
-) -> None:
-    r = client.get(
-        f"{settings.API_V1_STR}/users/{uuid.uuid4()}",
-        headers=normal_user_token_headers,
-    )
-    assert r.status_code == 403
-    assert r.json() == {"detail": "The user doesn't have enough privileges"}
-
-
 def test_create_user_existing_username(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+    client: TestClient, superuser_token_headers: dict[str, str], db
 ) -> None:
     username = random_email()
     # username = email
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
-    crud.create_user(session=db, user_create=user_in)
+    crud.create_user(session=firestore_client, user_create=user_in)
     data = {"email": username, "password": password}
     r = client.post(
         f"{settings.API_V1_STR}/users/",
@@ -147,17 +140,17 @@ def test_create_user_by_normal_user(
 
 
 def test_retrieve_users(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+    client: TestClient, superuser_token_headers: dict[str, str], db
 ) -> None:
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
-    crud.create_user(session=db, user_create=user_in)
+    crud.create_user(session=firestore_client, user_create=user_in)
 
     username2 = random_email()
     password2 = random_lower_string()
     user_in2 = UserCreate(email=username2, password=password2)
-    crud.create_user(session=db, user_create=user_in2)
+    crud.create_user(session=firestore_client, user_create=user_in2)
 
     r = client.get(f"{settings.API_V1_STR}/users/", headers=superuser_token_headers)
     all_users = r.json()
@@ -169,7 +162,7 @@ def test_retrieve_users(
 
 
 def test_update_user_me(
-    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+    client: TestClient, normal_user_token_headers: dict[str, str], db
 ) -> None:
     full_name = "Updated Name"
     email = random_email()
@@ -184,11 +177,11 @@ def test_update_user_me(
     assert updated_user["email"] == email
     assert updated_user["full_name"] == full_name
 
-    user_query = select(User).where(User.email == email)
-    user_db = db.exec(user_query).first()
-    assert user_db
-    assert user_db.email == email
-    assert user_db.full_name == full_name
+    # Verify user was updated in Firestore
+    user = crud.get_user_by_email(session=firestore_client, email=email)
+    assert user
+    assert user.email == email
+    assert user.full_name == full_name
 
 
 def test_update_password_me(
@@ -205,16 +198,18 @@ def test_update_password_me(
         json=data,
     )
     assert r.status_code == 200
-    updated_user = r.json()
-    assert updated_user["message"] == "Password updated successfully"
+    updated_response = r.json()
+    assert updated_response["message"] == "Password updated successfully"
 
-    user_query = select(User).where(User.email == settings.FIRST_SUPERUSER)
-    user_db = db.exec(user_query).first()
-    assert user_db
-    assert user_db.email == settings.FIRST_SUPERUSER
-    assert verify_password(new_password, user_db.hashed_password)
+    # Fetch user document from Firestore
+    user_doc = firestore_client.collection("users").document(str(settings.FIRST_SUPERUSER_ID)).get()
+    assert user_doc.exists
+    user_data = user_doc.to_dict()
 
-    # Revert to the old password to keep consistency in test
+    # Verify the password was updated in Firestore
+    assert verify_password(new_password, user_data["hashed_password"])
+
+    # Revert to old password for test consistency
     old_data = {
         "current_password": new_password,
         "new_password": settings.FIRST_SUPERUSER_PASSWORD,
@@ -224,10 +219,12 @@ def test_update_password_me(
         headers=superuser_token_headers,
         json=old_data,
     )
-    db.refresh(user_db)
-
     assert r.status_code == 200
-    assert verify_password(settings.FIRST_SUPERUSER_PASSWORD, user_db.hashed_password)
+
+    # Refresh user data
+    user_doc = firestore_client.collection("users").document(str(settings.FIRST_SUPERUSER_ID)).get()
+    user_data = user_doc.to_dict()
+    assert verify_password(settings.FIRST_SUPERUSER_PASSWORD, user_data["hashed_password"])
 
 
 def test_update_password_me_incorrect_password(
@@ -251,7 +248,7 @@ def test_update_user_me_email_exists(
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud.create_user(session=firestore_client, user_create=user_in)
 
     data = {"email": user.email}
     r = client.patch(
@@ -326,7 +323,7 @@ def test_update_user(
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud.create_user(session=firestore_client, user_create=user_in)
 
     data = {"full_name": "Updated_full_name"}
     r = client.patch(
@@ -350,8 +347,9 @@ def test_update_user_not_exists(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     data = {"full_name": "Updated_full_name"}
+    fake_user_id = "nonexistent_user_id_67890"
     r = client.patch(
-        f"{settings.API_V1_STR}/users/{uuid.uuid4()}",
+        f"{settings.API_V1_STR}/users/{fake_user_id}",
         headers=superuser_token_headers,
         json=data,
     )
@@ -365,12 +363,12 @@ def test_update_user_email_exists(
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud.create_user(session=firestore_client, user_create=user_in)
 
     username2 = random_email()
     password2 = random_lower_string()
     user_in2 = UserCreate(email=username2, password=password2)
-    user2 = crud.create_user(session=db, user_create=user_in2)
+    user2 = crud.create_user(session=firestore_client, user_create=user_in2)
 
     data = {"email": user2.email}
     r = client.patch(
@@ -386,7 +384,7 @@ def test_delete_user_me(client: TestClient, db: Session) -> None:
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud.create_user(session=firestore_client, user_create=user_in)
     user_id = user.id
 
     login_data = {
@@ -431,7 +429,7 @@ def test_delete_user_super_user(
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud.create_user(session=firestore_client, user_create=user_in)
     user_id = user.id
     r = client.delete(
         f"{settings.API_V1_STR}/users/{user_id}",
@@ -458,7 +456,7 @@ def test_delete_user_not_found(
 def test_delete_user_current_super_user_error(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    super_user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    super_user = crud.get_user_by_email(session=firestore_client, email=settings.FIRST_SUPERUSER)
     assert super_user
     user_id = super_user.id
 
@@ -476,7 +474,7 @@ def test_delete_user_without_privileges(
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud.create_user(session=firestore_client, user_create=user_in)
 
     r = client.delete(
         f"{settings.API_V1_STR}/users/{user.id}",

@@ -4,7 +4,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router"
 import { type SubmitHandler, useForm } from "react-hook-form"
 import { FiMail } from "react-icons/fi"
 
-import { type ApiError, LoginService } from "@/client"
+import { type ApiError, AuthService } from "@/client"
 import { Button } from "@/components/ui/button"
 
 import { InputGroup } from "@/components/ui/input-group"
@@ -37,7 +37,7 @@ function RecoverPassword() {
   const { showSuccessToast } = useCustomToast()
 
   const recoverPassword = async (data: FormData) => {
-    await LoginService.recoverPassword({
+    await AuthService.recoverPassword({
       email: data.email,
     })
   }

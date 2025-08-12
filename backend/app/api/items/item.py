@@ -1,14 +1,12 @@
 import uuid
 from typing import Any
+from typing import List
 
 from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
 
 from app.utils.auth import CurrentUser, SessionDep
 from app.models.item import Item, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate
-
-from app.models.user import User
-from app.models.auth import TokenPayload
+from app.config import settings
 from app.models.message import Message
 
 
@@ -22,39 +20,63 @@ def read_items(
     """
     Retrieve items.
     """
+    print("Retrieving items")
+    
+    if not session:
+        raise HTTPException(status_code=500, detail="Database not available")
+
+    # Reference to the items collection
+    items_ref = session.collection("items")
+    
     if current_user.is_superuser:
-        count_statement = select(func.count()).select_from(Item)
-        count = session.exec(count_statement).one()
-        statement = select(Item).offset(skip).limit(limit)
-        items = session.exec(statement).all()
+        # Get all items for superuser
+        query = items_ref.offset(skip).limit(limit)
+        items_docs = list(query.stream())
+        
+        # Get total count
+        all_items = list(items_ref.stream())
+        count = len(all_items)
     else:
-        count_statement = (
-            select(func.count())
-            .select_from(Item)
-            .where(Item.owner_id == current_user.id)
-        )
-        count = session.exec(count_statement).one()
-        statement = (
-            select(Item)
-            .where(Item.owner_id == current_user.id)
-            .offset(skip)
-            .limit(limit)
-        )
-        items = session.exec(statement).all()
+        # Get items only for current user
+        query = items_ref.where("owner_id", "==", str(current_user.id)).offset(skip).limit(limit)
+        items_docs = list(query.stream())
+        
+        # Get count for current user
+        user_items = list(items_ref.where("owner_id", "==", str(current_user.id)).stream())
+        count = len(user_items)
+    
+    # Convert Firestore documents to Item objects
+    items = []
+    for doc in items_docs:
+        item_data = doc.to_dict()
+        item_data["id"] = doc.id
+        items.append(ItemPublic(**item_data))
 
     return ItemsPublic(data=items, count=count)
 
 
 @router.get("/{id}", response_model=ItemPublic)
-def read_item(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
+def read_item(session: SessionDep, current_user: CurrentUser, id: str) -> Any:
     """
     Get item by ID.
     """
-    item = session.get(Item, id)
-    if not item:
+    if not session:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    # Get item document by ID
+    items_ref = session.collection("items")
+    doc = items_ref.document(id).get()
+    
+    if not doc.exists:
         raise HTTPException(status_code=404, detail="Item not found")
-    if not current_user.is_superuser and (item.owner_id != current_user.id):
+    
+    item_data = doc.to_dict()
+    item_data["id"] = doc.id
+    item = Item(**item_data)
+    
+    if not current_user.is_superuser and (item.owner_id != str(current_user.id)):
         raise HTTPException(status_code=400, detail="Not enough permissions")
+    
     return item
 
 
@@ -65,11 +87,23 @@ def create_item(
     """
     Create new item.
     """
-    item = Item.model_validate(item_in, update={"owner_id": current_user.id})
-    session.add(item)
-    session.commit()
-    session.refresh(item)
-    return item
+    if not session:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    # Create item data with owner_id
+    item_data = item_in.model_dump()
+    item_data["owner_id"] = str(current_user.id)
+    
+    # Add to Firestore
+    items_ref = session.collection("items")
+    doc_ref = items_ref.add(item_data)[1]  # add() returns (timestamp, doc_ref)
+    
+    # Get the created document
+    created_doc = doc_ref.get()
+    created_data = created_doc.to_dict()
+    created_data["id"] = created_doc.id
+    
+    return Item(**created_data)
 
 
 @router.put("/{id}", response_model=ItemPublic)
@@ -77,37 +111,67 @@ def update_item(
     *,
     session: SessionDep,
     current_user: CurrentUser,
-    id: uuid.UUID,
+    id: str,
     item_in: ItemUpdate,
 ) -> Any:
     """
     Update an item.
     """
-    item = session.get(Item, id)
-    if not item:
+    if not session:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    # Get existing item
+    items_ref = session.collection("items")
+    doc_ref = items_ref.document(id)
+    doc = doc_ref.get()
+    
+    if not doc.exists:
         raise HTTPException(status_code=404, detail="Item not found")
-    if not current_user.is_superuser and (item.owner_id != current_user.id):
+    
+    item_data = doc.to_dict()
+    item_data["id"] = doc.id
+    item = Item(**item_data)
+    
+    if not current_user.is_superuser and (item.owner_id != str(current_user.id)):
         raise HTTPException(status_code=400, detail="Not enough permissions")
+    
+    # Update the document
     update_dict = item_in.model_dump(exclude_unset=True)
-    item.sqlmodel_update(update_dict)
-    session.add(item)
-    session.commit()
-    session.refresh(item)
-    return item
+    doc_ref.update(update_dict)
+    
+    # Get updated document
+    updated_doc = doc_ref.get()
+    updated_data = updated_doc.to_dict()
+    updated_data["id"] = updated_doc.id
+    
+    return Item(**updated_data)
 
 
 @router.delete("/{id}")
 def delete_item(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+    session: SessionDep, current_user: CurrentUser, id: str
 ) -> Message:
     """
     Delete an item.
     """
-    item = session.get(Item, id)
-    if not item:
+    if not session:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    # Get existing item
+    items_ref = session.collection("items")
+    doc_ref = items_ref.document(id)
+    doc = doc_ref.get()
+    
+    if not doc.exists:
         raise HTTPException(status_code=404, detail="Item not found")
-    if not current_user.is_superuser and (item.owner_id != current_user.id):
+    
+    item_data = doc.to_dict()
+    item = Item(**item_data)
+    
+    if not current_user.is_superuser and (item.owner_id != str(current_user.id)):
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    session.delete(item)
-    session.commit()
+    
+    # Delete the document
+    doc_ref.delete()
+    
     return Message(message="Item deleted successfully")

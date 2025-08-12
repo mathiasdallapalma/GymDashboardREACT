@@ -1,33 +1,34 @@
 from unittest.mock import MagicMock, patch
 
-from sqlmodel import select
-
-from app.backend_pre_start import init, logger
+from app.backend_pre_start import init_firestore, logger
 
 
 def test_init_successful_connection() -> None:
-    engine_mock = MagicMock()
-
-    session_mock = MagicMock()
-    exec_mock = MagicMock(return_value=True)
-    session_mock.configure_mock(**{"exec.return_value": exec_mock})
+    firestore_client_mock = MagicMock()
+    
+    collection_mock = MagicMock()
+    limit_mock = MagicMock()
+    stream_mock = MagicMock(return_value=[])
+    
+    limit_mock.configure_mock(**{"stream.return_value": stream_mock})
+    collection_mock.configure_mock(**{"limit.return_value": limit_mock})
+    firestore_client_mock.configure_mock(**{"collection.return_value": collection_mock})
 
     with (
-        patch("sqlmodel.Session", return_value=session_mock),
         patch.object(logger, "info"),
         patch.object(logger, "error"),
         patch.object(logger, "warn"),
     ):
         try:
-            init(engine_mock)
+            init_firestore(firestore_client_mock)
             connection_successful = True
         except Exception:
             connection_successful = False
 
         assert (
             connection_successful
-        ), "The database connection should be successful and not raise an exception."
+        ), "The Firestore connection should be successful and not raise an exception."
 
-        assert session_mock.exec.called_once_with(
-            select(1)
-        ), "The session should execute a select statement once."
+        assert firestore_client_mock.collection.called, "The client should access a collection."
+        assert collection_mock.limit.called, "The collection should be limited."
+        assert limit_mock.stream.called, "The query should be streamed."

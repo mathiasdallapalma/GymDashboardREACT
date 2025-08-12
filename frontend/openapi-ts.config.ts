@@ -4,25 +4,41 @@ export default defineConfig({
   client: "legacy/axios",
   input: "./openapi.json",
   output: "./src/client",
-  // exportSchemas: true,
   plugins: [
     {
       name: "@hey-api/sdk",
-      // NOTE: this doesn't allow tree-shaking
       asClass: true,
       operationId: true,
-      methodNameBuilder: (operation) => {
-        // @ts-ignore
-        let name: string = operation.name
-        // @ts-ignore
-        const service: string = operation.service
+methodNameBuilder: (operation) => {
+  // @ts-ignore
+  let name = operation.name
 
-        if (service && name.toLowerCase().startsWith(service.toLowerCase())) {
-          name = name.slice(service.length)
-        }
+  console.log("---- DEBUG ----")
+  console.log("operation.name:", name)
 
-        return name.charAt(0).toLowerCase() + name.slice(1)
-      },
+  // 1. Extract version
+  let versionSuffix = ""
+  const versionMatch = name.match(/ApiV\d+/i)
+  if (versionMatch) {
+    versionSuffix = versionMatch[0] // e.g., "ApiV1"
+    name = name.split(versionMatch[0])[0] // take only before version
+  }
+
+  // 2. Remove trailing HTTP verb if present
+  name = name.replace(/(Get|Post|Put|Delete|Patch)$/i, "")
+
+  // 3. Lowercase first char
+  const finalName = name.charAt(0).toLowerCase() + name.slice(1) + (versionSuffix || "")
+
+  console.log("FINAL NAME:", finalName)
+  console.log("---------------")
+
+  return finalName
+}
+
+
+
     },
   ],
 })
+

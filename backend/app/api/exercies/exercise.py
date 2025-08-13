@@ -106,8 +106,6 @@ def create_exercise(
         exercise_data["category"] = exercise_data["category"].value
     if "muscle_group" in exercise_data and exercise_data["muscle_group"]:
         exercise_data["muscle_group"] = exercise_data["muscle_group"].value
-    if "equipment" in exercise_data and exercise_data["equipment"]:
-        exercise_data["equipment"] = exercise_data["equipment"].value
     if "difficulty" in exercise_data and exercise_data["difficulty"]:
         exercise_data["difficulty"] = exercise_data["difficulty"].value
     

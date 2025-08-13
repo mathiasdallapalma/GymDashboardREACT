@@ -7,7 +7,7 @@ function ExerciseCard({ exercise, size = "180px", onPlay,  }) {
     return (
         <Box
             bg="gray.900"
-            borderRadius="lg"
+            borderRadius="2xl"
             overflow="hidden"
             boxShadow="2xl"
             position="relative"

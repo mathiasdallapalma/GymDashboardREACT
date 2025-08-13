@@ -20,7 +20,7 @@ function CustomDrawer({ open, onClose, element }) {
         >
             <HStack
                 p={1}
-                mb={4}
+                mb={1}
             >
                 <IconButton
                     aria-label="Exit"

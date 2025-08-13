@@ -7,15 +7,20 @@ import {
   HStack,
   Text,
   Image,
+  Box,
+  Icon,
+  IconButton
 } from "@chakra-ui/react"
 import React from "react"
-import { useNavigate } from "@tanstack/react-router"
 import { FiSearch } from "react-icons/fi"
 
 import PendingExercises from "@/components/Pending/PendingExercises"
 import ExerciseCard from "@/components/Exercises/exercise-card"
 import CustomDrawer from "@/components/Common/CustomDrawer"
+import AddExerciseDrawer from "@/components/Exercises/add-exercise-drawer"
 import useAuth from "@/hooks/useAuth"
+
+import { IoAddCircleSharp } from "react-icons/io5";
 
 interface Exercise {
   id: string;
@@ -23,7 +28,6 @@ interface Exercise {
   description: string;
   category: string;
   muscle_group: string;
-  equipment: string;
   reps?: number;
   sets?: number;
   weight?: number;
@@ -39,15 +43,60 @@ interface ExercisesListProps {
   routeFullPath: string;
   exercises: Exercise[];
   showAddExercise: boolean;
+  onAddExercise?: (exercise: Exercise) => void;
 }
 
-function ExercisesList({ onPlay, exercises, showAddExercise=false }: ExercisesListProps) {
+function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExercise }: ExercisesListProps) {
 
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [drawerContent, setDrawerContent] = React.useState<React.ReactNode>(null);
   const { user: currentUser } = useAuth()
 
-  currentUser.role="trainer"
+  // TODO: Remove this simulation
+  if (currentUser) {
+    (currentUser as any).role = "trainer";
+  }
+
+  const newExercise = () => {
+    setDrawerContent(
+      <AddExerciseDrawer
+        onSubmit={onSubmitNewExercise}
+        onCancel={() => setDrawerOpen(false)}
+      />
+    );
+    setDrawerOpen(true);
+  };
+
+  const onSubmitNewExercise = (data: any) => {
+    console.log("New exercise data:", data);
+    
+    // Create a complete exercise object with required fields
+    const newExercise: Exercise = {
+      id: `temp-${Date.now()}`, // Temporary ID until backend creates real one
+      title: data.title,
+      description: data.description || "",
+      category: data.category,
+      muscle_group: data.muscle_group,
+      reps: data.reps,
+      sets: data.sets,
+      weight: data.weight,
+      duration: data.duration,
+      difficulty: data.difficulty,
+      image_url: data.image_url || "",
+      video_url: data.video_url || "",
+      owner_id: currentUser?.id || "unknown", // Use current user ID
+    };
+
+    // Call the parent's onAddExercise function if provided
+    if (onAddExercise) {
+      onAddExercise(newExercise);
+    }
+    
+    // TODO: Implement API call to create exercise
+    // const createdExercise = await createExercise(newExercise);
+    
+    setDrawerOpen(false);
+  };
 
   const handlePlay = (exercise: any) => {
     setDrawerContent(
@@ -73,24 +122,15 @@ function ExercisesList({ onPlay, exercises, showAddExercise=false }: ExercisesLi
       </Flex>
     );
     setDrawerOpen(true);
-    
+
     // Also call the parent onPlay if provided
     if (onPlay) {
       onPlay(exercise);
     }
   };
 
-  /*
-  const { data, isLoading, isPlaceholderData } = useQuery({
-    ...getExercisesQueryOptions({ page }),
-    placeholderData: (prevData) => prevData,
-  })
-  */
 
-  //const exercises = data?.data.slice(0, PER_PAGE) ?? []
-  //const count = data?.count ?? 0
 
-  //mockup data
   const isLoading = false; // Simulating loading state
 
   if (isLoading) {
@@ -119,21 +159,44 @@ function ExercisesList({ onPlay, exercises, showAddExercise=false }: ExercisesLi
     <>
       <CustomDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} element={drawerContent} />
       <Grid templateColumns="repeat(2, 1fr)" gap="3">
-        {showAddExercise && currentUser.role === "trainer" && (
-          <ExerciseCard 
-            key="add-exercise" 
-            exercise={{ id: "add-exercise", title: "Add Exercise", description: "Add a new exercise", image_url: "", video_url: "" }} 
-            size="40vw"
-            onPlay={handlePlay} 
-          />
+        {showAddExercise && currentUser && (currentUser as any).role === "trainer" && (
+          <Box
+            bg="gray.900"
+            borderRadius="2xl"
+           
+            overflow="hidden"
+            boxShadow="2xl"
+            position="relative"
+            color="white"
+            aspectRatio="1/1"
+            w="40vw"
+            mb={2}
+            border="solid" 
+          >
+            <IconButton
+              aria-label="Play Exercise"
+              w="100px"
+              h="100px"
+              position="absolute"
+              top="50%"
+              right="50%"
+              transform="translate(50%, -50%)"
+              bg="white"
+              borderRadius="full"
+              onClick={() => newExercise()}
+            >
+              <IoAddCircleSharp color="purple" style={{ height: "95px", width: "95px" }} />
+            </IconButton>
+            
+          </Box>
         )}
         {exercises?.map((exercise) => (
-          <ExerciseCard 
-            key={exercise.id} 
-            exercise={exercise} 
+          <ExerciseCard
+            key={exercise.id}
+            exercise={exercise}
             size="40vw"
-            onPlay={handlePlay} 
-            
+            onPlay={handlePlay}
+
           />
         ))}
       </Grid>

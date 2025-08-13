@@ -8,7 +8,7 @@ from pydantic import BaseModel, EmailStr
 class UserRole(str, Enum):
     USER = "user"
     ADMIN = "admin"
-    MODERATOR = "moderator"
+    TRAINER = "trainer"
 
 
 # Shared properties

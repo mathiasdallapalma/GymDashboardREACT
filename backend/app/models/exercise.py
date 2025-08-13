@@ -5,13 +5,6 @@ from pydantic import BaseModel
 from google.cloud.firestore import DocumentReference
 
 
-# Define possible roles
-class UserRole(str, Enum):
-    USER = "user"
-    ADMIN = "admin"
-    MODERATOR = "moderator"
-
-
 class ExerciseCategory(str, Enum):
     STRENGTH = "strength"
     CARDIO = "cardio"
@@ -31,15 +24,6 @@ class MuscleGroup(str, Enum):
     OTHER = "other"
 
 
-class Equipment(str, Enum):
-    NONE = "none"
-    DUMBBELL = "dumbbell"
-    BARBELL = "barbell"
-    MACHINE = "machine"
-    BAND = "band"
-    MAT = "mat"
-    OTHER = "other"
-
 
 class Difficulty(str, Enum):
     BEGINNER = "beginner"
@@ -54,8 +38,11 @@ class ExerciseBase(BaseModel):
     description: Optional[str] = None
     category: Optional[ExerciseCategory] = None
     muscle_group: Optional[MuscleGroup] = None
+    reps: Optional[int] = None
+    sets: Optional[int] = None
+    duration: Optional[int] = None
     difficulty: Optional[Difficulty] = None
-    duration: Optional[int] = None  # in seconds, non-negative assumed
+    
     image_url: Optional[str] = None
     video_url: Optional[str] = None
 

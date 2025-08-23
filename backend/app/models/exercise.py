@@ -26,9 +26,9 @@ class MuscleGroup(str, Enum):
 
 
 class Difficulty(str, Enum):
-    BEGINNER = "beginner"
-    INTERMEDIATE = "intermediate"
-    ADVANCED = "advanced"
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
 
 
 # Shared properties

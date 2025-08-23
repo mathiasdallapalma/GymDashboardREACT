@@ -9,16 +9,18 @@ import {
   Icon,
   Button,
   Image,
+  IconButton,
 } from "@chakra-ui/react"
 import React from "react"
 
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { FaEdit } from "react-icons/fa"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { FaEdit, FaArrowLeft } from "react-icons/fa"
 import { z } from "zod"
 
 import AddExercise from "@/components/Exercises/AddExercise"
 import ExercisesList from "@/components/Exercises/exercise-list"
 import CustomDrawer from "@/components/Common/CustomDrawer"
+import GoBack from "@/components/ui/goback"
 
 const exercisesSearchSchema = z.object({
   page: z.number().catch(1),
@@ -38,7 +40,7 @@ const activity = {
       sets: 3,
       weight: 70,
       duration: 5,
-      difficulty: "beginner",
+      difficulty: "easy",
       image_url: "https://example.com/push-up.jpg",
       video_url: "https://example.com/push-up-video.mp4",
       owner_id: "user-1"
@@ -51,7 +53,7 @@ const activity = {
       muscle_group: "legs",
       equipment: "none",
       duration: 8,
-      difficulty: "beginner",
+      difficulty: "easy",
       image_url: "https://example.com/squat.jpg",
       video_url: "https://example.com/squat-video.mp4",
       owner_id: "user-1"
@@ -64,7 +66,7 @@ const activity = {
       muscle_group: "core",
       equipment: "none",
       duration: 10,
-      difficulty: "intermediate",
+      difficulty: "medium",
       image_url: "https://example.com/plank.jpg",
       video_url: "https://example.com/plank-video.mp4",
       owner_id: "user-1"
@@ -222,7 +224,7 @@ function Activities() {
 
   return (
     <Container maxW="full" p={1} >
-
+      <GoBack/>
       <Flex justify="flex-end" mb={-4}>
         <Link to="/edit-calendar" style={{ textDecoration: "none" }}>
           <Button

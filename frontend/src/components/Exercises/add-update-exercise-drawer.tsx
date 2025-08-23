@@ -17,26 +17,16 @@ import {
   Float,
   useFileUploadContext
 } from "@chakra-ui/react"
-import React from "react"
+import React, { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
-import { LuFileImage, LuX } from "react-icons/lu"
+import { LuX } from "react-icons/lu"
 import { HiUpload } from "react-icons/hi"
+import { type ExercisePublic, type ExerciseCategory, type MuscleGroup, type Difficulty } from "@/client"
 
-interface Exercise {
-  title: string;
-  description: string;
-  category: string;
-  muscle_group: string;
-  reps?: number;
-  sets?: number;
-  duration?: number;
-  difficulty: string;
-  image_url: string;
-  video_url1: string;
-}
-
-interface AddExerciseDrawerProps {
-  onSubmit: (data: Exercise) => void;
+interface AddUpdateExerciseDrawerProps {
+  mode: 'add' | 'update';
+  exercise?: ExercisePublic; // Required when mode is 'update'
+  onSubmit: (data: ExercisePublic) => void;
   onCancel: () => void;
 }
 
@@ -66,42 +56,32 @@ const FileUploadList = () => {
   )
 }
 
-function AddExerciseDrawer({ onSubmit, onCancel }: AddExerciseDrawerProps) {
+function AddUpdateExerciseDrawer({ mode, exercise, onSubmit, onCancel }: AddUpdateExerciseDrawerProps) {
   const {
     register,
     handleSubmit,
     control,
     formState: { errors, isSubmitting },
     reset
-  } = useForm<Exercise>()
+  } = useForm<ExercisePublic>({
+    defaultValues: exercise || {}
+  })
 
-  const categories = [
-    "strength",
-    "cardio",
-    "flexibility",
-    "balance",
-    "endurance",
-    "sports"
-  ]
+  // Reset form when mode changes to 'add' or when exercise changes
+  useEffect(() => {
+    if (mode === 'add') {
+      reset({});
+    } else if (mode === 'update' && exercise) {
+      reset(exercise);
+    }
+  }, [mode, exercise, reset])
 
-  const muscleGroups = [
-    "chest",
-    "back",
-    "shoulders",
-    "arms",
-    "legs",
-    "core",
-    "glutes",
-    "full body"
-  ]
+  // Extract values from generated union types
+  const categories = ["strength", "cardio", "flexibility", "balance", "other"] as const
+  const muscleGroups = ["chest", "back", "legs", "arms", "shoulders", "core", "full_body", "other"] as const
+  const difficulties = ["beginner", "intermediate", "advanced"] as const
 
-  const difficulties = [
-    "beginner",
-    "intermediate",
-    "advanced"
-  ]
-
-  const onSubmitNewExercise = (data: Exercise) => {
+  const onSubmitNewExercise = (data: ExercisePublic) => {
     onSubmit(data);
     reset();
   };
@@ -113,7 +93,9 @@ function AddExerciseDrawer({ onSubmit, onCancel }: AddExerciseDrawerProps) {
 
   return (
     <Flex direction="column" gap={4} p={4} py={1} overflow="auto" h="90%">
-      <Heading size="lg" color="lime">Add New Exercise</Heading>
+      <Heading size="lg" color="lime">
+        {mode === 'add' ? 'Add New Exercise' : 'Update Exercise'}
+      </Heading>
       
       <form onSubmit={handleSubmit(onSubmitNewExercise)}>
         <VStack gap={4}>
@@ -334,12 +316,15 @@ function AddExerciseDrawer({ onSubmit, onCancel }: AddExerciseDrawerProps) {
             <Field.ErrorText>{errors.video_url?.message}</Field.ErrorText>
           </Field.Root>
               
-
+          
           <HStack w="100%" gap={3} pt={4}>
             <Button
               type="button"
               variant="outline"
               flex="1"
+              borderRadius="full"
+              color="green"
+              borderColor="green"
               onClick={handleCancel}
             >
               Cancel
@@ -349,8 +334,11 @@ function AddExerciseDrawer({ onSubmit, onCancel }: AddExerciseDrawerProps) {
               colorScheme="purple"
               flex="1"
               loading={isSubmitting}
+              color="lime"
+              bg="gray.600"
+              borderRadius="full"
             >
-              Create Exercise
+              {mode === 'add' ? 'Create Exercise' : 'Update Exercise'}
             </Button>
           </HStack>
         </VStack>
@@ -359,4 +347,4 @@ function AddExerciseDrawer({ onSubmit, onCancel }: AddExerciseDrawerProps) {
   );
 }
 
-export default AddExerciseDrawer;
+export default AddUpdateExerciseDrawer;

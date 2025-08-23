@@ -5,40 +5,47 @@ import {
   HStack,
   Text,
   Image,
-} from "@chakra-ui/react"
+  EmptyState,
+  VStack,
+  Box,
+  Icon,
+  IconButton
+
+  } from "@chakra-ui/react"
 import React from "react"
+
+import { IoAddCircleSharp } from "react-icons/io5";
+
 
 import { createFileRoute } from "@tanstack/react-router"
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query"
 import { z } from "zod"
+import { FiSearch } from "react-icons/fi"
+import { FaLock } from "react-icons/fa";
 
 import AddExercise from "@/components/Exercises/AddExercise"
 import ExercisesList from "@/components/Exercises/exercise-list"
 import CustomDrawer from "@/components/Common/CustomDrawer"
+import PendingExercises from "@/components/Pending/PendingExercises"
 import type { UserPublic } from "@/client"
-import useAuth from "@/hooks/useAuth"
+import useCustomToast from "@/hooks/useCustomToast"
+import { type ExerciseCreate, ExercisesService, type ExercisePublic } from "@/client"
+import type { ApiError } from "@/client/core/ApiError"
+import { handleError } from "@/utils"
+import GoBack from "@/components/ui/goback"
+import SortComponent from "@/components/ui/sort-component"
 
 const exercisesSearchSchema = z.object({
-  page: z.number().catch(1),
+  // Remove page parameter since we're loading all exercises
 })
 
-interface Exercise {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  muscle_group: string;
-  reps?: number;
-  sets?: number;
-  weight?: number;
-  duration: number;
-  difficulty: string;
-  image_url: string;
-  video_url: string;
-  owner_id: string;
+function getExercisesQueryOptions() {
+  return {
+    queryFn: () =>
+      ExercisesService.readExercisesApiV1(), // Load up to 1000 exercises
+    queryKey: ["exercises", "all"],
+  }
 }
-
-
 
 export const Route = createFileRoute("/_layout/exercises")({
   component: Exercises,
@@ -46,135 +53,239 @@ export const Route = createFileRoute("/_layout/exercises")({
 })
 
 function Exercises() {
-  const { page } = Route.useSearch()
   const queryClient = useQueryClient()
-  const { user: currentUser } = useAuth()
-  
-  // State for exercises list
-  const [exercises, setExercises] = React.useState<Exercise[]>([
-    {
-      id: "1",
-      title: "Push Up",
-      description: "A basic exercise for upper body strength",
-      category: "strength",
-      muscle_group: "chest",
-      reps: 10,
-      sets: 3,
-      weight: 70,
-      duration: 5,
-      difficulty: "beginner",
-      image_url: "https://example.com/push-up.jpg",
-      video_url: "https://example.com/push-up-video.mp4",
-      owner_id: "user-1"
-    },
-    {
-      id: "2",
-      title: "Squat",
-      description: "A basic exercise for lower body strength",
-      category: "strength",
-      muscle_group: "legs",
-      duration: 8,
-      difficulty: "beginner",
-      image_url: "https://example.com/squat.jpg",
-      video_url: "https://example.com/squat-video.mp4",
-      owner_id: "user-1"
-    },
-    {
-      id: "3",
-      title: "Plank",
-      description: "A core stability exercise",
-      category: "core",
-      muscle_group: "core",
-      duration: 10,
-      difficulty: "intermediate",
-      image_url: "https://example.com/plank.jpg",
-      video_url: "https://example.com/plank-video.mp4",
-      owner_id: "user-1"
-    }
-  ]);
+  const { showSuccessToast } = useCustomToast()
 
-  // State for loading and errors
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  // State for sorting
+  const [sortBy, setSortBy] = React.useState<string>("title")
+  const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc")
 
-  // Create exercise mutation - similar to login mutation
-  const createExerciseMutation = useMutation({
-    mutationFn: async (exerciseData: Omit<Exercise, 'id' | 'owner_id'>) => {
-      console.log("Creating exercise with data:", exerciseData)
-      
-      // TODO: Replace with actual API call
-      // const response = await ExercisesService.createExercise(exerciseData)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newExercise: Exercise = {
-        ...exerciseData,
-        id: `exercise-${Date.now()}`,
-        owner_id: currentUser?.id || "unknown"
-      };
-      
-      console.log("Exercise created:", newExercise)
-      return newExercise;
-    },
-    onSuccess: (newExercise) => {
-      console.log("Exercise creation successful:", newExercise)
-      
-      // Add to local state
-      setExercises(prev => [...prev, newExercise]);
-      
-      // Invalidate and refetch exercises query if using react-query
-      // queryClient.invalidateQueries({ queryKey: ['exercises'] })
-      
-      setError(null);
-    },
-    onError: (error) => {
-      console.error("Exercise creation error:", error)
-      setError("Failed to create exercise. Please try again.");
-    },
-  })
-
-  // Fetch exercises query - similar to how login handles data
-  // TODO: Uncomment when API is ready
-  /*
-  const { data: exercisesData, isLoading: isQueryLoading, error: queryError } = useQuery({
-    queryKey: ['exercises', page],
-    queryFn: () => ExercisesService.getExercises({ page }),
+  // Fetch all exercises from API
+  const { data, isLoading } = useQuery({
+    ...getExercisesQueryOptions(),
     placeholderData: (prevData) => prevData,
   })
-  */
 
-  const resetError = () => {
-    setError(null);
+  // State for errors
+  const [error, setError] = React.useState<string | null>(null);
+
+  const exercises = data?.data ?? []
+
+  // Sort exercises based on selected criteria
+  const sortedExercises = React.useMemo(() => {
+    if (!exercises.length) return exercises;
+
+    return [...exercises].sort((a, b) => {
+      let aValue: any = (a as any)[sortBy];
+      let bValue: any = (b as any)[sortBy];
+
+      // Handle different data types
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      } else {
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+      }
+    });
+  }, [exercises, sortBy, sortOrder])
+
+  // Sorting options for exercises
+  const exerciseSortOptions = [
+    { value: "title", label: "Title" },
+    { value: "category", label: "Category" },
+    { value: "muscle_group", label: "Muscle Group" },
+    { value: "difficulty", label: "Difficulty" },
+    { value: "duration", label: "Duration" },
+  ]
+
+  // Create exercise mutation with optimistic updates
+  const createMutation = useMutation({
+    mutationFn: (data: ExerciseCreate) =>
+      ExercisesService.createExerciseApiV1({ requestBody: data }),
+    onMutate: async (newExercise) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ["exercises", "all"] })
+      
+      // Snapshot the previous value
+      const previousExercises = queryClient.getQueryData(["exercises", "all"])
+      
+      // Create temporary exercise with optimistic ID
+      const optimisticExercise = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        title: newExercise.title,
+        description: newExercise.description,
+        category: newExercise.category || "strength",
+        muscle_group: newExercise.muscle_group || "full body",
+        reps: newExercise.reps,
+        sets: newExercise.sets,
+        duration: newExercise.duration || 0,
+        difficulty: newExercise.difficulty || "easy",
+        image_url: newExercise.image_url || "",
+        video_url: newExercise.video_url || "",
+        owner_id: "current-user", // Will be set by backend
+      }
+      
+      // Optimistically update the cache
+      queryClient.setQueryData(["exercises", "all"], (old: any) => {
+        if (!old) return { data: [optimisticExercise], count: 1 }
+        return {
+          ...old,
+          data: [optimisticExercise, ...old.data],
+          count: old.count + 1
+        }
+      })
+      
+      // Return a context object with the snapshotted value
+      return { previousExercises }
+    },
+    onSuccess: (newExercise) => {     
+      // Replace the optimistic exercise with the real one from server
+      queryClient.setQueryData(["exercises", "all"], (old: any) => {
+        if (!old) return old
+        return {
+          ...old,
+          data: old.data.map((exercise: any) => 
+            exercise.id.startsWith('temp-') ? newExercise : exercise
+          )
+        }
+      })
+    },
+    onError: (err: ApiError, _variables, context) => {
+      handleError(err)
+      setError("Failed to create exercise. Please try again.")
+      
+      // Roll back to the previous state
+      if (context?.previousExercises) {
+        queryClient.setQueryData(["exercises", "all"], context.previousExercises)
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure we have correct data
+      queryClient.invalidateQueries({ queryKey: ["exercises"] })
+    },
+  })  
+  
+  // Update exercise mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: ExerciseCreate }) =>
+      ExercisesService.updateExerciseApiV1({ id, requestBody: data }),
+    onSuccess: () => {
+      showSuccessToast("Exercise updated successfully.")
+    },
+    onError: (err: ApiError) => {
+      handleError(err)
+      setError("Failed to update exercise. Please try again.")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["exercises"] })
+    },
+  })
+
+  // Delete exercise mutation with optimistic updates
+  const deleteMutation = useMutation({
+    mutationFn: (exerciseId: string) =>
+      ExercisesService.deleteExerciseApiV1({ id: exerciseId }),
+    onMutate: async (exerciseId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["exercises", "all"] })
+      
+      // Snapshot the previous value
+      const previousExercises = queryClient.getQueryData(["exercises", "all"])
+      
+      // Optimistically remove the exercise from cache
+      queryClient.setQueryData(["exercises", "all"], (old: any) => {
+        if (!old) return old
+        return {
+          ...old,
+          data: old.data.filter((exercise: any) => exercise.id !== exerciseId),
+          count: old.count - 1
+        }
+      })
+      
+      return { previousExercises }
+    },
+    onSuccess: () => {
+      showSuccessToast("Exercise deleted successfully.")
+    },
+    onError: (err: ApiError, _variables, context) => {
+      handleError(err)
+      setError("Failed to delete exercise. Please try again.")
+      
+      // Roll back to the previous state
+      if (context?.previousExercises) {
+        queryClient.setQueryData(["exercises", "all"], context.previousExercises)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["exercises"] })
+    },
+  })
+
+  const handleAddExercise = (exerciseData: ExercisePublic) => {
+    setError(null)
+    // Map Exercise to ExerciseCreate with all fields
+    const createData: ExerciseCreate = {
+      title: exerciseData.title,
+      description: exerciseData.description || "",
+      category: exerciseData.category,
+      muscle_group: exerciseData.muscle_group,
+      reps: exerciseData.reps,
+      sets: exerciseData.sets,
+      duration: exerciseData.duration,
+      difficulty: exerciseData.difficulty,
+      image_url: exerciseData.image_url,
+      video_url: exerciseData.video_url,
+    }
+    createMutation.mutate(createData)
   }
 
-  const handleAddExercise = async (exerciseData: Exercise) => {
-    if (createExerciseMutation.isPending) return;
+  const handleUpdateExercise = (exerciseData: ExercisePublic) => {
+    setError(null)
+    if (!exerciseData.id) return;
 
-    resetError();
-
-    console.log("Adding exercise:", exerciseData);
-
-    try {
-      // Extract the data needed for creation (remove id and owner_id)
-      const { id, owner_id, ...createData } = exerciseData;
-      await createExerciseMutation.mutateAsync(createData);
-    } catch (error) {
-      console.error("Error adding exercise:", error);
-      // Error is handled by mutation onError
+    // Map Exercise to ExerciseCreate
+    const updateData: ExerciseCreate = {
+      title: exerciseData.title,
+      description: exerciseData.description || "",
+      // Add other fields as needed for your API
     }
-  };
+    updateMutation.mutate({ id: exerciseData.id, data: updateData })
+  }
 
-  const handlePlay = (exercise: Exercise) => {
+  const handlePlay = (exercise: ExercisePublic) => {
     console.log("Playing exercise:", exercise);
     // Handle play functionality if needed
   };
 
+  const handleDeleteExercise = (exerciseId: string) => {
+    setError(null)
+    deleteMutation.mutate(exerciseId)
+  }
+
   return (
     <Container maxW="full" p={1} >
-      <Heading size="lg" pt={12}>
-        Your exercises
-      </Heading>
+      <GoBack />
+
+      {/* Header with Heading and Sort Controls */}
+      <HStack justify="space-between" align="center" pt={12} pb={4} >
+        <Heading size="lg" w="full">
+          Your exercises
+        </Heading>
+
+        {/* Sort Controls */}
+        <SortComponent
+          w="160px"
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSortByChange={setSortBy}
+          onSortOrderChange={setSortOrder}
+          sortOptions={exerciseSortOptions}
+        />
+      </HStack>
 
       {error && (
         <Text color="red.500" fontSize="sm" mt={2}>
@@ -182,13 +293,21 @@ function Exercises() {
         </Text>
       )}
 
-      <ExercisesList 
-        onPlay={handlePlay} 
-        routeFullPath={Route.fullPath}
-        exercises={exercises}
-        showAddExercise={true}
-        onAddExercise={handleAddExercise}
-      />
+      {isLoading ? (
+        <PendingExercises />
+      ) : (
+        <ExercisesList
+          onPlay={handlePlay}
+          routeFullPath={Route.fullPath}
+          exercises={sortedExercises as any} // Use sorted exercises
+          showAddExercise={true}
+          onAddExercise={handleAddExercise}
+          onUpdateExercise={handleUpdateExercise}
+          onDeleteExercise={handleDeleteExercise}
+        />
+      )}
     </Container >
   )
 }
+
+export default Exercises

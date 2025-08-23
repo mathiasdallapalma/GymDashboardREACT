@@ -364,6 +364,118 @@ export class ItemsService {
     
 }
 
+export class LoginService {
+    /**
+     * Login
+     * Placeholder for login endpoint.
+     * This can be used to redirect to a frontend login page or similar.
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static loginApiV1(): CancelablePromise<LoginApiV1GetResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/'
+        });
+    }
+    
+    /**
+     * Login Access Token
+     * OAuth2 compatible token login, get an access token for future requests
+     * @param data The data for the request.
+     * @param data.formData
+     * @returns Token Successful Response
+     * @throws ApiError
+     */
+    public static loginAccessTokenApiV1(data: LoginAccessTokenApiV1LoginAccessTokenPostData): CancelablePromise<LoginAccessTokenApiV1LoginAccessTokenPostResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/login/access-token',
+            formData: data.formData,
+            mediaType: 'application/x-www-form-urlencoded',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Test Token
+     * Test access token
+     * @returns UserPublic Successful Response
+     * @throws ApiError
+     */
+    public static testTokenApiV1(): CancelablePromise<TestTokenApiV1LoginTestTokenPostResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/login/test-token'
+        });
+    }
+    
+    /**
+     * Recover Password
+     * Password Recovery
+     * @param data The data for the request.
+     * @param data.email
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static recoverPasswordApiV1(data: RecoverPasswordApiV1PasswordRecoveryEmailPostData): CancelablePromise<RecoverPasswordApiV1PasswordRecoveryEmailPostResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/password-recovery/{email}',
+            path: {
+                email: data.email
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Reset Password
+     * Reset password
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static resetPasswordApiV1(data: ResetPasswordApiV1ResetPasswordPostData): CancelablePromise<ResetPasswordApiV1ResetPasswordPostResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/reset-password/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Recover Password Html Content
+     * HTML Content for Password Recovery
+     * @param data The data for the request.
+     * @param data.email
+     * @returns string Successful Response
+     * @throws ApiError
+     */
+    public static recoverPasswordHtmlContentApiV1(data: RecoverPasswordHtmlContentApiV1PasswordRecoveryHtmlContentEmailPostData): CancelablePromise<RecoverPasswordHtmlContentApiV1PasswordRecoveryHtmlContentEmailPostResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/password-recovery-html-content/{email}',
+            path: {
+                email: data.email
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+}
+
 export class UsersService {
     /**
      * Read Users

@@ -31,7 +31,7 @@ function Home() {
   return (
     <>
       <Container maxW="full" p={1}>
-        <Box pt={12} m={4}>
+        <Box pt={2} m={4}>
           <Text fontSize="2xl" truncate maxW="sm">
             Hi, {currentUser?.full_name || currentUser?.email} 👋🏼
           </Text>

@@ -1,6 +1,7 @@
 import secrets
 import warnings
-from typing_extensions import Annotated, Any, Literal
+from typing import List, Union, Any, Literal
+from typing_extensions import Annotated
 
 from pydantic import (
     AnyUrl,
@@ -16,10 +17,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
 
-def parse_cors(v: Any) -> list[str] | str:
+def parse_cors(v: Any) -> Union[List[str], str]:
     if isinstance(v, str) and not v.startswith("["):
         return [i.strip() for i in v.split(",")]
-    elif isinstance(v, list | str):
+    elif isinstance(v, (list, str)):
         return v
     raise ValueError(v)
 
@@ -33,7 +34,8 @@ class Settings(BaseSettings):
     )
     APP_VERSION: str = "0.1.0"
     API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str = secrets.token_urlsafe(32)
+    #SECRET_KEY: str = secrets.token_urlsafe(32)
+    SECRET_KEY: str = "development-secret-key-please-change-in-production"
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     SECURITY_ALGORITHM:str ="HS256"
@@ -41,25 +43,25 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
     CORS_ORIGINS: Annotated[
-        list[AnyUrl] | str, BeforeValidator(parse_cors)
+        Union[List[AnyUrl], str], BeforeValidator(parse_cors)
     ] = []
-    CORS_ORIGINS_REGEX: str | None = None
-    CORS_HEADERS: list[str] = ["*"]
+    CORS_ORIGINS_REGEX: Union[str, None] = None
+    CORS_HEADERS: List[str] = ["*"]
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def all_cors_origins(self) -> list[str]:
+    def all_cors_origins(self) -> List[str]:
         return [str(origin).rstrip("/") for origin in self.CORS_ORIGINS] + [
             self.FRONTEND_HOST
         ]
 
     PROJECT_NAME: str
-    SENTRY_DSN: HttpUrl | None = None
+    SENTRY_DSN: Union[HttpUrl, None] = None
     
     # Firebase Configuration
     USE_FIREBASE: bool = True
-    FIREBASE_PROJECT_ID: str | None = None
-    FIREBASE_CREDENTIALS_PATH: str | None = None
+    FIREBASE_PROJECT_ID: Union[str, None] = None
+    FIREBASE_CREDENTIALS_PATH: Union[str, None] = None
     
     # PostgreSQL Configuration (Legacy)
     POSTGRES_SERVER: str
@@ -83,11 +85,11 @@ class Settings(BaseSettings):
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
     SMTP_PORT: int = 587
-    SMTP_HOST: str | None = None
-    SMTP_USER: str | None = None
-    SMTP_PASSWORD: str | None = None
-    EMAILS_FROM_EMAIL: EmailStr | None = None
-    EMAILS_FROM_NAME: EmailStr | None = None
+    SMTP_HOST: Union[str, None] = None
+    SMTP_USER: Union[str, None] = None
+    SMTP_PASSWORD: Union[str, None] = None
+    EMAILS_FROM_EMAIL: Union[EmailStr, None] = None
+    EMAILS_FROM_NAME: Union[EmailStr, None] = None
 
     @model_validator(mode="after")
     def _set_default_emails_from(self) -> Self:
@@ -106,7 +108,7 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
-    def _check_default_secret(self, var_name: str, value: str | None) -> None:
+    def _check_default_secret(self, var_name: str, value: Union[str, None]) -> None:
         if value == "changethis":
             message = (
                 f'The value of {var_name} is "changethis", '

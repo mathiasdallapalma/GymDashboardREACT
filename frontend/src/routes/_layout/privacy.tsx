@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router"
 
 
 import useAuth from "@/hooks/useAuth"
+import GoBack from "@/components/ui/goback"
 
 
 
@@ -16,6 +17,7 @@ function PrivacyPage() {
   return (
     <>
       <Container maxW="full" p={1}>
+        <GoBack />
         <Text>Privacy!</Text>
       </Container>
     </>

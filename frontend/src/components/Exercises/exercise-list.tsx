@@ -12,55 +12,68 @@ import {
   IconButton
 } from "@chakra-ui/react"
 import React from "react"
-import { FiSearch } from "react-icons/fi"
+import { FiSearch, FiEdit, FiTrash2 } from "react-icons/fi"
 
 import PendingExercises from "@/components/Pending/PendingExercises"
 import ExerciseCard from "@/components/Exercises/exercise-card"
 import CustomDrawer from "@/components/Common/CustomDrawer"
-import AddExerciseDrawer from "@/components/Exercises/add-exercise-drawer"
+import AddUpdateExerciseDrawer from "@/components/Exercises/add-update-exercise-drawer"
 import useAuth from "@/hooks/useAuth"
+import { type ExercisePublic } from "@/client"
+import {
+  DialogActionTrigger,
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Button } from "@chakra-ui/react"
 
 import { IoAddCircleSharp } from "react-icons/io5";
 
-interface Exercise {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  muscle_group: string;
-  reps?: number;
-  sets?: number;
-  weight?: number;
-  duration: number;
-  difficulty: string;
-  image_url: string;
-  video_url: string;
-  owner_id: string;
-}
-
 interface ExercisesListProps {
-  onPlay?: (exercise: Exercise) => void;
+  onPlay?: (exercise: ExercisePublic) => void;
   routeFullPath: string;
-  exercises: Exercise[];
+  exercises: ExercisePublic[];
   showAddExercise: boolean;
-  onAddExercise?: (exercise: Exercise) => void;
+  onAddExercise?: (exercise: ExercisePublic) => void;
+  onUpdateExercise?: (exercise: ExercisePublic) => void;
+  onDeleteExercise?: (exerciseId: string) => void;
 }
 
-function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExercise }: ExercisesListProps) {
+function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExercise, onUpdateExercise, onDeleteExercise }: ExercisesListProps) {
 
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [drawerContent, setDrawerContent] = React.useState<React.ReactNode>(null);
   const { user: currentUser } = useAuth()
 
-  // TODO: Remove this simulation
-  if (currentUser) {
-    (currentUser as any).role = "trainer";
-  }
+  // Check if user is trainer or admin using proper typing
+  const isTrainerOrAdmin = currentUser && (
+    currentUser.role === "admin" || 
+    currentUser.role === "trainer"
+  );
 
   const newExercise = () => {
     setDrawerContent(
-      <AddExerciseDrawer
+      <AddUpdateExerciseDrawer
+        mode="add"
         onSubmit={onSubmitNewExercise}
+        onCancel={() => setDrawerOpen(false)}
+      />
+    );
+    setDrawerOpen(true);
+  };
+
+  const editExercise = (exercise: ExercisePublic) => {
+    setDrawerContent(
+      <AddUpdateExerciseDrawer
+        mode="update"
+        exercise={exercise}
+        onSubmit={onSubmitUpdateExercise}
         onCancel={() => setDrawerOpen(false)}
       />
     );
@@ -70,38 +83,96 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
   const onSubmitNewExercise = (data: any) => {
     console.log("New exercise data:", data);
     
-    // Create a complete exercise object with required fields
-    const newExercise: Exercise = {
-      id: `temp-${Date.now()}`, // Temporary ID until backend creates real one
-      title: data.title,
-      description: data.description || "",
-      category: data.category,
-      muscle_group: data.muscle_group,
-      reps: data.reps,
-      sets: data.sets,
-      weight: data.weight,
-      duration: data.duration,
-      difficulty: data.difficulty,
-      image_url: data.image_url || "",
-      video_url: data.video_url || "",
-      owner_id: currentUser?.id || "unknown", // Use current user ID
-    };
-
     // Call the parent's onAddExercise function if provided
     if (onAddExercise) {
-      onAddExercise(newExercise);
+      onAddExercise(data); // Pass the raw form data to parent
     }
+        
+    setDrawerOpen(false);
+  };
+
+  const onSubmitUpdateExercise = (data: any) => {
+    console.log("Update exercise data:", data);
     
-    // TODO: Implement API call to create exercise
-    // const createdExercise = await createExercise(newExercise);
-    
+    // Call the parent's onUpdateExercise function if provided
+    if (onUpdateExercise) {
+      onUpdateExercise(data); // Pass the raw form data to parent
+    }
+        
     setDrawerOpen(false);
   };
 
   const handlePlay = (exercise: any) => {
     setDrawerContent(
-      <Flex direction="column" gap={4} p={4}>
-        <Heading>{exercise.title}</Heading>
+      <Flex direction="column" gap={4} p={4} position="relative">
+        {/* Action Icons in top right corner */}
+        <HStack position="absolute" top="2" right="2" gap={2}>
+          {/* Edit Icon */}
+          <IconButton
+            aria-label="Edit Exercise"
+            size="sm"
+            bg="gray.800"
+            color="white"
+            borderRadius="full"
+            _hover={{ bg: "gray.700" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setDrawerOpen(false); // Close current drawer first
+              setTimeout(() => editExercise(exercise), 100); // Small delay to ensure smooth transition
+            }}
+          >
+            <FiEdit />
+          </IconButton>
+
+          {/* Delete Icon with Confirmation Dialog */}
+          <DialogRoot>
+            <DialogTrigger asChild>
+              <IconButton
+                aria-label="Delete Exercise"
+                size="sm"
+                bg="red.500"
+                color="white"
+                borderRadius="full"
+                _hover={{ bg: "red.500" }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <FiTrash2 />
+              </IconButton>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Exercise</DialogTitle>
+              </DialogHeader>
+              <DialogBody>
+                <Text>
+                  Are you sure you want tdwdadwao delete "{exercise.title}"? This action cannot be undone.
+                </Text>
+              </DialogBody>
+              <DialogFooter>
+                <DialogActionTrigger asChild   >
+                  <Button color="green" borderRadius="full" variant="outline">Cancel</Button>
+                </DialogActionTrigger>
+                <DialogActionTrigger asChild>
+                  <Button 
+                    bg="red.500"
+                    borderRadius="full"
+                    onClick={() => {
+                      if (onDeleteExercise) {
+                        onDeleteExercise(exercise.id);
+                      }
+                      setDrawerOpen(false);
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </DialogActionTrigger>
+              </DialogFooter>
+              <DialogCloseTrigger />
+            </DialogContent>
+          </DialogRoot>
+        </HStack>
+
+        <Heading size="lg" text-overflow="clip" color="lime">{exercise.title} </Heading>
         <HStack gap={3} w="80%" justifyContent="right">
           {exercise.duration && (
             <Text w="1/3" fontSize="sm" color="purple.400">{exercise.duration} Mins</Text>
@@ -137,33 +208,14 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
     return <PendingExercises />
   }
 
-  if (exercises.length === 0) {
-    return (
-      <EmptyState.Root>
-        <EmptyState.Content>
-          <EmptyState.Indicator>
-            <FiSearch />
-          </EmptyState.Indicator>
-          <VStack textAlign="center">
-            <EmptyState.Title>You don't have any exercises yet</EmptyState.Title>
-            <EmptyState.Description>
-              Add a new exercise to get started
-            </EmptyState.Description>
-          </VStack>
-        </EmptyState.Content>
-      </EmptyState.Root>
-    )
-  }
-
   return (
     <>
       <CustomDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} element={drawerContent} />
       <Grid templateColumns="repeat(2, 1fr)" gap="3">
-        {showAddExercise && currentUser && (currentUser as any).role === "trainer" && (
+        {showAddExercise && isTrainerOrAdmin && (
           <Box
             bg="gray.900"
             borderRadius="2xl"
-           
             overflow="hidden"
             boxShadow="2xl"
             position="relative"
@@ -174,7 +226,7 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
             border="solid" 
           >
             <IconButton
-              aria-label="Play Exercise"
+              aria-label="Add Exercise"
               w="100px"
               h="100px"
               position="absolute"
@@ -187,7 +239,6 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
             >
               <IoAddCircleSharp color="purple" style={{ height: "95px", width: "95px" }} />
             </IconButton>
-            
           </Box>
         )}
         {exercises?.map((exercise) => (
@@ -196,7 +247,6 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
             exercise={exercise}
             size="40vw"
             onPlay={handlePlay}
-
           />
         ))}
       </Grid>

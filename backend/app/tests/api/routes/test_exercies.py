@@ -13,8 +13,7 @@ def test_create_exercise(
         "description": "Fighters",
         "category": "strength",
         "muscle_group": "chest",
-        "equipment": "dumbbell",
-        "difficulty": "beginner",
+        "difficulty": "easy",
         "duration": 300,
         "image_url": "https://example.com/image.jpg",
         "video_url": "https://example.com/video.mp4"
@@ -32,7 +31,6 @@ def test_create_exercise(
     assert content["description"] == data["description"]
     assert content["category"] == data["category"]
     assert content["muscle_group"] == data["muscle_group"]
-    assert content["equipment"] == data["equipment"]
     assert content["difficulty"] == data["difficulty"]
     assert content["duration"] == data["duration"]
     assert content["image_url"] == data["image_url"]
@@ -50,8 +48,7 @@ def test_read_exercise(
         "description": "Test Description",
         "category": "strength",
         "muscle_group": "chest",
-        "equipment": "dumbbell",
-        "difficulty": "beginner",
+        "difficulty": "easy",
         "duration": 300,
         "image_url": "https://example.com/image.jpg",
         "video_url": "https://example.com/video.mp4"
@@ -98,8 +95,7 @@ def test_read_exercise_not_enough_permissions(
         "description": "Test Description",
         "category": "strength",
         "muscle_group": "chest",
-        "equipment": "dumbbell",
-        "difficulty": "beginner",
+        "difficulty": "easy",
         "duration": 300,
         "image_url": "https://example.com/image.jpg",
         "video_url": "https://example.com/video.mp4"
@@ -135,8 +131,7 @@ def test_read_exercises(
         "description": "Test Description 1",
         "category": "strength",
         "muscle_group": "chest",
-        "equipment": "dumbbell",
-        "difficulty": "beginner",
+        "difficulty": "easy",
         "duration": 300,
         "image_url": "https://example.com/image1.jpg",
         "video_url": "https://example.com/video1.mp4"
@@ -173,8 +168,7 @@ def test_update_exercise(
         "description": "Original description",
         "category": "strength",
         "muscle_group": "chest",
-        "equipment": "dumbbell",
-        "difficulty": "beginner",
+        "difficulty": "easy",
         "duration": 300,
         "image_url": "https://example.com/image.jpg",
         "video_url": "https://example.com/video.mp4"
@@ -193,8 +187,7 @@ def test_update_exercise(
         "description": "Updated description",
         "category": "cardio",
         "muscle_group": "legs",
-        "equipment": "none",
-        "difficulty": "intermediate",
+        "difficulty": "medium",
         "duration": 600,
         "image_url": "https://example.com/updated-image.jpg",
         "video_url": "https://example.com/updated-video.mp4"
@@ -210,7 +203,6 @@ def test_update_exercise(
     assert content["description"] == update_data["description"]
     assert content["category"] == update_data["category"]
     assert content["muscle_group"] == update_data["muscle_group"]
-    assert content["equipment"] == update_data["equipment"]
     assert content["difficulty"] == update_data["difficulty"]
     assert content["duration"] == update_data["duration"]
     assert content["image_url"] == update_data["image_url"]
@@ -227,8 +219,7 @@ def test_update_exercise_not_found(
         "description": "Updated description",
         "category": "flexibility",
         "muscle_group": "core",
-        "equipment": "mat",
-        "difficulty": "advanced",
+        "difficulty": "hard",
         "duration": 900,
         "image_url": "https://example.com/updated-image.jpg",
         "video_url": "https://example.com/updated-video.mp4"
@@ -255,8 +246,7 @@ def test_update_exercise_not_enough_permissions(
         "description": "Test Description",
         "category": "strength",
         "muscle_group": "chest",
-        "equipment": "dumbbell",
-        "difficulty": "beginner",
+        "difficulty": "easy",
         "duration": 300,
         "image_url": "https://example.com/image.jpg",
         "video_url": "https://example.com/video.mp4"
@@ -275,8 +265,7 @@ def test_update_exercise_not_enough_permissions(
         "description": "Updated description",
         "category": "balance",
         "muscle_group": "full_body",
-        "equipment": "band",
-        "difficulty": "beginner",
+        "difficulty": "easy",
         "duration": 450,
         "image_url": "https://example.com/updated-image.jpg",
         "video_url": "https://example.com/updated-video.mp4"
@@ -300,8 +289,7 @@ def test_delete_exercise(
         "description": "Test Description",
         "category": "strength",
         "muscle_group": "chest",
-        "equipment": "dumbbell",
-        "difficulty": "beginner",
+        "difficulty": "easy",
         "duration": 300,
         "image_url": "https://example.com/image.jpg",
         "video_url": "https://example.com/video.mp4"
@@ -348,8 +336,7 @@ def test_delete_exercise_not_enough_permissions(
         "description": "Test Description",
         "category": "strength",
         "muscle_group": "chest",
-        "equipment": "dumbbell",
-        "difficulty": "beginner",
+        "difficulty": "easy",
         "duration": 300,
         "image_url": "https://example.com/image.jpg",
         "video_url": "https://example.com/video.mp4"

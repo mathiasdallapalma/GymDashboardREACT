@@ -1,6 +1,7 @@
 import uuid
 from enum import Enum
 from typing import List, Optional
+from datetime import date
 from pydantic import BaseModel, EmailStr
 
 
@@ -11,12 +12,25 @@ class UserRole(str, Enum):
     TRAINER = "trainer"
 
 
+# Define possible sex options
+class Sex(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+
+
 # Shared properties
 class UserBase(BaseModel):
     email: EmailStr
     is_active: bool = True
     is_superuser: bool = False
     full_name: Optional[str] = None
+    mobile_number: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    weight: Optional[float] = None  # in kg
+    height: Optional[float] = None  # in meters
+    notes: Optional[str] = None
+    sex: Optional[Sex] = None
     role: UserRole = UserRole.USER
 
 
@@ -37,6 +51,15 @@ class UserRegister(BaseModel):
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_superuser: Optional[bool] = None
+    full_name: Optional[str] = None
+    mobile_number: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    weight: Optional[float] = None
+    height: Optional[float] = None
+    notes: Optional[str] = None
+    sex: Optional[Sex] = None
     role: Optional[UserRole] = None
 
 
@@ -44,6 +67,12 @@ class UserUpdate(UserBase):
 class UserUpdateMe(BaseModel):
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
+    mobile_number: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    weight: Optional[float] = None
+    height: Optional[float] = None
+    notes: Optional[str] = None
+    sex: Optional[Sex] = None
 
 
 # For password changes

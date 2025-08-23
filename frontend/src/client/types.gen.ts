@@ -16,14 +16,34 @@ export type Body_login_access_token_api_v1_login_access_token_post = {
     client_secret?: (string | null);
 };
 
+export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+
+export type ExerciseCategory = 'strength' | 'cardio' | 'flexibility' | 'balance' | 'other';
+
 export type ExerciseCreate = {
     title: string;
     description?: (string | null);
+    category?: (ExerciseCategory | null);
+    muscle_group?: (MuscleGroup | null);
+    reps?: (number | null);
+    sets?: (number | null);
+    duration?: (number | null);
+    difficulty?: (Difficulty | null);
+    image_url?: (string | null);
+    video_url?: (string | null);
 };
 
 export type ExercisePublic = {
     title: string;
     description?: (string | null);
+    category?: (ExerciseCategory | null);
+    muscle_group?: (MuscleGroup | null);
+    reps?: (number | null);
+    sets?: (number | null);
+    duration?: (number | null);
+    difficulty?: (Difficulty | null);
+    image_url?: (string | null);
+    video_url?: (string | null);
     id: string;
     owner_id: string;
 };
@@ -36,6 +56,14 @@ export type ExercisesPublic = {
 export type ExerciseUpdate = {
     title?: (string | null);
     description?: (string | null);
+    category?: (ExerciseCategory | null);
+    muscle_group?: (MuscleGroup | null);
+    reps?: (number | null);
+    sets?: (number | null);
+    duration?: (number | null);
+    difficulty?: (Difficulty | null);
+    image_url?: (string | null);
+    video_url?: (string | null);
 };
 
 export type HTTPValidationError = {
@@ -68,10 +96,14 @@ export type Message = {
     message: string;
 };
 
+export type MuscleGroup = 'chest' | 'back' | 'legs' | 'arms' | 'shoulders' | 'core' | 'full_body' | 'other';
+
 export type NewPassword = {
     token: string;
     new_password: string;
 };
+
+export type Sex = 'male' | 'female' | 'other';
 
 export type Token = {
     access_token: string;
@@ -85,18 +117,26 @@ export type UpdatePassword = {
 
 export type UserCreate = {
     email: string;
-    is_active?: boolean;
-    is_superuser?: boolean;
     full_name?: (string | null);
+    mobile_number?: (string | null);
+    date_of_birth?: (string | null);
+    weight?: (number | null);
+    height?: (number | null);
+    notes?: (string | null);
+    sex?: (Sex | null);
     role?: UserRole;
     password: string;
 };
 
 export type UserPublic = {
     email: string;
-    is_active?: boolean;
-    is_superuser?: boolean;
     full_name?: (string | null);
+    mobile_number?: (string | null);
+    date_of_birth?: (string | null);
+    weight?: (number | null);
+    height?: (number | null);
+    notes?: (string | null);
+    sex?: (Sex | null);
     role?: UserRole;
     id: string;
 };
@@ -108,7 +148,7 @@ export type UserRegister = {
     role?: UserRole;
 };
 
-export type UserRole = 'user' | 'admin' | 'moderator';
+export type UserRole = 'user' | 'admin' | 'trainer';
 
 export type UsersPublic = {
     data: Array<UserPublic>;
@@ -117,9 +157,13 @@ export type UsersPublic = {
 
 export type UserUpdate = {
     email?: (string | null);
-    is_active?: boolean;
-    is_superuser?: boolean;
     full_name?: (string | null);
+    mobile_number?: (string | null);
+    date_of_birth?: (string | null);
+    weight?: (number | null);
+    height?: (number | null);
+    notes?: (string | null);
+    sex?: (Sex | null);
     role?: (UserRole | null);
     password?: (string | null);
 };
@@ -127,6 +171,12 @@ export type UserUpdate = {
 export type UserUpdateMe = {
     full_name?: (string | null);
     email?: (string | null);
+    mobile_number?: (string | null);
+    date_of_birth?: (string | null);
+    weight?: (number | null);
+    height?: (number | null);
+    notes?: (string | null);
+    sex?: (Sex | null);
 };
 
 export type ValidationError = {

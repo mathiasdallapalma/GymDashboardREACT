@@ -14,6 +14,7 @@ function WorkoutSection() {
             calories: 120,
             image_url: "path.to",
             video_url: "#",
+            difficulty: "easy",
         },
         {
             id: "2",
@@ -22,13 +23,14 @@ function WorkoutSection() {
             calories: 100,
             image_url: "path.to",
             video_url: "#",
+            difficulty: "easy",
         },
     ];
 
     const navigate = useNavigate();
     const handlePlay = (exercise) => {
         navigate({
-            to: "/activity#today",
+            to: "/activity",
             search: { exerciseId: exercise.id }
         });
     };
@@ -39,7 +41,7 @@ function WorkoutSection() {
             <Box mb={2}>
                 <Flex justify="space-between" align="center" mb={0}>
                     <Heading size="md" color="lime">Today</Heading>
-                    <Link to="/activity#today" style={{ textDecoration: "none" }}>
+                    <Link to="/activity" style={{ textDecoration: "none" }}>
                         <Button
                             variant="ghost"
                             fontSize="sm"

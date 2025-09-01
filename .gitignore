@@ -153,6 +153,7 @@ logs/
 # Database
 *.db
 *.sqlite
+*.json
 
 # FastAPI specific
 .pytest_cache/

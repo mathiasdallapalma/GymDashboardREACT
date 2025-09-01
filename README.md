@@ -1,290 +1,101 @@
-# FastAPITemplate
- 
-mathiasdallapalma: (.venv) met@met-HP-Laptop-15s-eq2xxx:~/Documents/GitHub/FastAPITemplate/backend$ psql -U postgres -h localhost -p 5433
-Password for user postgres: 
-psql (16.9 (Ubuntu 16.9-0ubuntu0.24.04.1))
-SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, compression: off)
-Type "help" for help.
+#Gym Dashboard REACT
+  <p align="center">
+    Progetto d'esame del corso di Progettazione di app REACT (2024/2025)
+  <br>Università degli Studi di Verona - Prof. Graziano Pravadelli</a>
+  </p>
+</p>
+<br>
 
-postgres=# \du
-                               List of roles
-  Role name   |                         Attributes                         
---------------+------------------------------------------------------------
- fastapi_user | 
- postgres     | Superuser, Create role, Create DB, Replication, Bypass RLS
+## Table of contents
+- [Descrizione](#descrizione)
+- [Tecniche e Tecnologie Utilizzate](#tecniche-e-tecnologie-utilizzate) 
+- [Installazione e Utilizzo](#installazione-e-utilizzo) 
+- [Sviluppi Futuri](#sviluppi-futuri) 
 
-postgres=# GRANT ALL PRIVILEGES ON SCHEMA public TO fastapi_user;
-ALTER ROLE fastapi_user SET search_path TO public;
-GRANT
-ALTER ROLE
-postgres=# \q
-(.venv) met@met-HP-Laptop-15s-eq2xxx:~/Documents/GitHub/FastAPITemplate/backend$ psql -U fastapi_user -h localhost -p 5433 -d fastapi_db
-Password for user fastapi_user: 
-psql (16.9 (Ubuntu 16.9-0ubuntu0.24.04.1))
-SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, compression: off)
-Type "help" for help.
+## Descrizione
 
-fastapi_db=> CREATE TABLE test_table (id SERIAL PRIMARY KEY);
-DROP TABLE test_table;
-ERROR:  permission denied for schema public
-LINE 1: CREATE TABLE test_table (id SERIAL PRIMARY KEY);
-                     ^
-ERROR:  table "test_table" does not exist
-fastapi_db=> \q
-(.venv) met@met-HP-Laptop-15s-eq2xxx:~/Documents/GitHub/FastAPITemplate/backend$ psql -U postgres -h localhost -p 5433
-Password for user postgres: 
-psql (16.9 (Ubuntu 16.9-0ubuntu0.24.04.1))
-SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, compression: off)
-Type "help" for help.
+Il progetto ** Gym Dashboard ** ha l’obiettivo di fornire uno strumento digitale che permetta a medici con competenze di fisioterapia o personal trainer di definire, gestire e personalizzare i piani di allenamento dei propri pazienti/clienti.  
 
-postgres=# ALTER SCHEMA public OWNER TO fastapi_user;
-ALTER SCHEMA
-postgres=# GRANT ALL PRIVILEGES ON SCHEMA public TO fastapi_user;
-GRANT
-postgres=# \dn+ public
-                                List of schemas
-  Name  |    Owner     |      Access privileges       |      Description       
---------+--------------+------------------------------+------------------------
- public | fastapi_user | fastapi_user=UC/fastapi_user+| standard public schema
-        |              | =U/fastapi_user              | 
-(1 row)
+### Obiettivi del progetto
+- Creare una piattaforma intuitiva per la gestione di piani di esercizi fisici.  
+- Consentire una gestione centralizzata dei pazienti e delle loro schede di allenamento.  
+- Rendere possibile la modifica, il salvataggio e il recupero dei dati in modo sicuro e scalabile.  
 
-postgres=# \q
-(.venv) met@met-HP-Laptop-15s-eq2xxx:~/Documents/GitHub/FastAPITemplate/backend$ psql -U fastapi_user -h localhost -p 5433 -d fastapi_db
-Password for user fastapi_user: 
-psql (16.9 (Ubuntu 16.9-0ubuntu0.24.04.1))
-SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, compression: off)
-Type "help" for help.
+### Funzionalità sviluppate
+1. **Autenticazione e autorizzazione**  
+   - Login dell’utente.
+   - Gestione delle autorizzazioni in base ai ruoli (es. admin, personal trainer, paziente), con accesso differenziato alle funzionalità. 
 
-fastapi_db=> CREATE TABLE test_table (id SERIAL PRIMARY KEY);
-DROP TABLE test_table;
-ERROR:  permission denied for schema public
-LINE 1: CREATE TABLE test_table (id SERIAL PRIMARY KEY);
-                     ^
-ERROR:  table "test_table" does not exist
+2. **Gestione dei pazienti**  
+   - Creazione di nuovi pazienti/clienti con dati anagrafici e livello di attività fisica.  
+   - Visualizzazione e selezione di un paziente per accedere al suo piano di esercizi.  
 
-GitHub Copilot: The issue seems to be related to insufficient permissions for the `fastapi_user` role on the `public` schema, even after granting privileges. To resolve this, we need to ensure that the `fastapi_user` role has ownership of the `public` schema and the necessary privileges to create and manage tables.
+3. **Creazione e gestione del piano di esercizi**  
+   - Ogni esercizio contiene nome, descrizione, ripetizioni/durata, livello di difficoltà e note.  
+   - Organizzazione degli esercizi in base ai giorni della settimana.   
+   - Possibilità di modifica e cancellazione degli esercizi.  
 
-### [init_db.py](file:///home/met/Documents/GitHub/FastAPITemplate/backend/init_db.py)
+4. **Aggiunta di nuovi esercizi**  
+   - Inserimento manuale di esercizi non presenti nel database, con parametri personalizzati (tipologia, ripetizioni, tempo, intensità).
+   - 
+## Tecniche e Tecnologie Utilizzate
 
-Update the `ensure_permissions` function to include commands for altering the schema owner and granting all privileges on the schema to the `fastapi_user`.
+- **Backend**: [FastAPI](https://fastapi.tiangolo.com/) (Python) per la creazione delle API REST.  
+- **Database**: [Firestore](https://firebase.google.com/docs/firestore) (NoSQL, Google Cloud) per la gestione dei dati relativi a pazienti ed esercizi.  
+- **Documentazione e integrazione frontend**: [hey-api](https://heyapi.dev/) per la generazione automatica della documentazione e degli hook di chiamata al backend.  
+- **Frontend**: [React](https://react.dev/) con [TypeScript](https://www.typescriptlang.org/), sviluppato con **responsive design** (ottimizzato principalmente per mobile).  
+- **Gestione dati asincroni**: [React Query](https://tanstack.com/query/latest) per fetch, caching e sincronizzazione con il backend.  
+- **UI/UX**: [Chakra UI](https://chakra-ui.com/) per componenti reattivi e accessibili.   
+- **Testing**: [Pytest](https://docs.pytest.org/) per test automatici del backend.   
+- **Strumenti di sviluppo**: GitHub per versionamento
 
-````python
-def ensure_permissions():
-    """
-    Ensure the database user has the necessary permissions.
-    """
-    with engine.connect() as connection:
-        try:
-            print("Granting necessary permissions to the database user...")
-            connection.execute(text("ALTER SCHEMA public OWNER TO fastapi_user;"))
-            connection.execute(text("GRANT ALL PRIVILEGES ON SCHEMA public TO fastapi_user;"))
-            connection.execute(text("GRANT USAGE ON SCHEMA public TO fastapi_user;"))
-            connection.execute(text("GRANT CREATE ON SCHEMA public TO fastapi_user;"))
-            connection.execute(text("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO fastapi_user;"))
-            print("Permissions granted successfully.")
-        except ProgrammingError as e:
-            print(f"Error while granting permissions: {e}")
-````
+## Installazione e Utilizzo
 
-### Explanation of Changes:
-1. **`ALTER SCHEMA public OWNER TO fastapi_user;`**: Ensures that `fastapi_user` owns the `public` schema.
-2. **`GRANT ALL PRIVILEGES ON SCHEMA public TO fastapi_user;`**: Grants all privileges on the schema to `fastapi_user`.
-3. Retained the existing commands for granting usage, create privileges, and altering default privileges.
+### Requisiti
+- [Node.js](https://nodejs.org/) e [npm](https://www.npmjs.com/)  
+- [Python 3.10+](https://www.python.org/) e [venv](https://docs.python.org/3/library/venv.html)  
+- Account e credenziali Firebase Firestore (chiave in formato `.json`)  
+- File `.env` con le variabili d’ambiente necessarie  
 
-After making these changes, re-run the script to ensure the permissions are correctly applied.
+---
 
-Made changes.
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Il frontend sarà disponibile su http://localhost:5173 (o la porta configurata da Vite).
+### Backend
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate   # Linux/MacOS
+.venv\Scripts\activate      # Windows
 
-mathiasdallapalma: (.venv) met@met-HP-Laptop-15s-eq2xxx:~/Documents/GitHub/FastAPITemplate/backend$ python  init_db.py 
-/met/Documents/GitHub/FastAPITemplate/backend/app/config.py:109: UserWarning: The value of FIRST_SUPERUSER_PASSWORD is "changethis", for security, please change it, at least for deployments.
-  warnings.warn(message, stacklevel=1)
-Granting necessary permissions to the database user...
-Error while granting permissions: (psycopg.errors.InsufficientPrivilege) must be owner of schema public
-[SQL: ALTER SCHEMA public OWNER TO fastapi_user;]
-(Background on this error at: https://sqlalche.me/e/20/f405)
-Creating database tables...
-Traceback (most recent call last):
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1961, in _exec_single_context
-    self.dialect.do_execute(
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 944, in do_execute
-    cursor.execute(statement, parameters)
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/psycopg/cursor.py", line 97, in execute
-    raise ex.with_traceback(None)
-psycopg.errors.InsufficientPrivilege: permission denied for schema public
-LINE 2: CREATE TABLE "user" (
-                     ^
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/init_db.py", line 63, in <module>
-    init_db()
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/init_db.py", line 38, in init_db
-    SQLModel.metadata.create_all(engine)
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py", line 5924, in create_all
-    bind._run_ddl_visitor(
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3246, in _run_ddl_visitor
-    conn._run_ddl_visitor(visitorcallable, element, **kwargs)
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2453, in _run_ddl_visitor
-    ).traverse_single(element)
-      ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/sql/visitors.py", line 661, in traverse_single
-    return meth(obj, **kw)
-           ^^^^^^^^^^^^^^^
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 984, in visit_metadata
-    self.traverse_single(
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/sql/visitors.py", line 661, in traverse_single
-    return meth(obj, **kw)
-           ^^^^^^^^^^^^^^^
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 1022, in visit_table
-    )._invoke_with(self.connection)
-      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 321, in _invoke_with
-    return bind.execute(self)
-           ^^^^^^^^^^^^^^^^^^
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1413, in execute
-    return meth(
-           ^^^^^
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 187, in _execute_on_connection
-    return connection._execute_ddl(
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1524, in _execute_ddl
-    ret = self._execute_context(
-          ^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1840, in _execute_context
-    return self._exec_single_context(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1980, in _exec_single_context
-    self._handle_dbapi_exception(
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2349, in _handle_dbapi_exception
-    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1961, in _exec_single_context
-    self.dialect.do_execute(
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 944, in do_execute
-    cursor.execute(statement, parameters)
-  File "/home/met/Documents/GitHub/FastAPITemplate/backend/.venv/lib/python3.12/site-packages/psycopg/cursor.py", line 97, in execute
-    raise ex.with_traceback(None)
-sqlalchemy.exc.ProgrammingError: (psycopg.errors.InsufficientPrivilege) permission denied for schema public
-LINE 2: CREATE TABLE "user" (
-                     ^
-[SQL: 
-CREATE TABLE "user" (
-        email VARCHAR(255) NOT NULL, 
-        is_active BOOLEAN NOT NULL, 
-        is_superuser BOOLEAN NOT NULL, 
-        full_name VARCHAR(255), 
-        id UUID NOT NULL, 
-        hashed_password VARCHAR NOT NULL, 
-        PRIMARY KEY (id)
-)
-
-]
-(Background on this error at: https://sqlalche.me/e/20/f405)
-
-GitHub Copilot: The error indicates that the `fastapi_user` role does not have sufficient privileges to alter the schema or create tables. This is likely because the `fastapi_user` role does not own the `public` schema, and the `ALTER SCHEMA public OWNER TO fastapi_user;` command fails due to insufficient privileges.
-
-To resolve this, you need to ensure that the `postgres` user (or another superuser) assigns ownership of the `public` schema to `fastapi_user` before running the script. Since this cannot be done programmatically within the script due to privilege limitations, you must execute the following SQL commands manually as the `postgres` user:
-
-### Manual SQL Commands
-Run these commands in your PostgreSQL shell as the `postgres` user:
-```sql
--- Log in as the postgres user
-psql -U postgres -h localhost -p 5433
-
--- Assign ownership of the public schema to fastapi_user
-ALTER SCHEMA public OWNER TO fastapi_user;
-
--- Grant all privileges on the public schema to fastapi_user
-GRANT ALL PRIVILEGES ON SCHEMA public TO fastapi_user;
-
--- Exit the PostgreSQL shell
-\q
+pip install -r requirements.txt
+uvicorn app.main:app --reload
 ```
 
-### Updated Script
-After manually fixing the schema ownership, you can run the script without further modifications. However, to avoid redundant errors in the future, you can add a check in the script to skip the `ALTER SCHEMA` command if it fails due to insufficient privileges.
+---
 
-Here is the updated `ensure_permissions` function:
+### Variabili d’ambiente
 
-````python
-def ensure_permissions():
-    """
-    Ensure the database user has the necessary permissions.
-    """
-    with engine.connect() as connection:
-        try:
-            print("Granting necessary permissions to the database user...")
-            try:
-                connection.execute(text("ALTER SCHEMA public OWNER TO fastapi_user;"))
-            except ProgrammingError:
-                print("Skipping ALTER SCHEMA as the current user lacks sufficient privileges.")
-            connection.execute(text("GRANT ALL PRIVILEGES ON SCHEMA public TO fastapi_user;"))
-            connection.execute(text("GRANT USAGE ON SCHEMA public TO fastapi_user;"))
-            connection.execute(text("GRANT CREATE ON SCHEMA public TO fastapi_user;"))
-            connection.execute(text("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO fastapi_user;"))
-            print("Permissions granted successfully.")
-        except ProgrammingError as e:
-            print(f"Error while granting permissions: {e}")
-````
+Il progetto richiede:
 
-### Explanation of Changes:
-1. **Try-Except for `ALTER SCHEMA`**: The `ALTER SCHEMA` command is wrapped in a `try-except` block to handle cases where the script is run by a non-superuser.
-2. **Graceful Handling**: If the `ALTER SCHEMA` command fails, the script will print a warning and continue with the remaining commands.
+Un file .env nella cartella backend/ contenente le variabili d’ambiente (es. configurazione Firestore, secret key, ecc.).
 
-### Next Steps:
-1. Execute the manual SQL commands as the `postgres` user to fix the schema ownership.
-2. Run the updated script to ensure permissions and initialize the database.
+La chiave di accesso a Firestore in formato .json, da salvare in locale e referenziata all’interno del .env.
 
-Made changes.
+## Sviluppi Futuri
 
-mathiasdallapalma: last time i changed a config system file from peer to md5
+- **Analisi avanzata dei dati**: aggiungere statistiche e grafici basati sullo storico degli esercizi per fornire un quadro chiaro dei progressi dei pazienti.  
+- **Miglioramento dell’esperienza utente**: completare le pagine attualmente presenti solo come mockup, al fine di aumentare il coinvolgimento dell'utente.  
+- **CI/CD**: implementare pipeline di integrazione e distribuzione continua (es. GitHub Actions) per test, build e deploy automatizzati.  
+- **Deploy in produzione**: rilascio dell’applicazione su servizi cloud (es. **Vercel** per il frontend, **Google Cloud Run** o **Heroku** per il backend) per consentire l’accesso al di fuori del localhost.  
+- **Notifiche e reminder**: integrare un sistema di notifiche (email o push) per ricordare ai pazienti gli esercizi programmati.    
+- **Multilingua e accessibilità**: rendere l’interfaccia utilizzabile in più lingue (es. italiano/inglese) e ottimizzata per utenti con disabilità.  
+- **Integrazione con dispositivi wearable**: collegamento a smartwatch e fitness tracker per importare automaticamente i dati delle sessioni di allenamento.  
 
-GitHub Copilot: Changing the PostgreSQL authentication method from `peer` to `md5` in the configuration file (`pg_hba.conf`) ensures that users authenticate with a password instead of relying on system user matching. Below is a step-by-step guide to verify and apply this change.
 
-### Steps to Verify and Apply the Change:
-1. Locate the `pg_hba.conf` file:
-   - The file is typically located in the PostgreSQL data directory. You can find its location by running:
-     ```bash
-     psql -U postgres -c "SHOW hba_file;"
-     ```
 
-2. Open the `pg_hba.conf` file for editing:
-   ```bash
-   sudo nano /path/to/pg_hba.conf
-   ```
-
-3. Look for the line(s) that specify `peer` authentication for local connections. It will look something like this:
-   ```
-   local   all             all                                     peer
-   ```
-
-4. Change `peer` to `md5` to enforce password authentication:
-   ```
-   local   all             all                                     md5
-   ```
-
-5. Save the file and exit the editor.
-
-6. Restart the PostgreSQL service to apply the changes:
-   ```bash
-   sudo systemctl restart postgresql
-   ```
-
-7. Test the connection using a password:
-   ```bash
-   psql -U postgres -h localhost -p 5433
-   ```
-
-### Additional Notes:
-- Ensure that the PostgreSQL user (`fastapi_user` in your case) has a password set. You can set or reset the password using:
-  ```sql
-  ALTER USER fastapi_user WITH PASSWORD 'your_password';
-  ```
-
-- If you encounter issues, check the PostgreSQL logs for more details:
-  ```bash
-  sudo tail -f /var/log/postgresql/postgresql-<version>-main.log
-  ```
-
-Let me know if you need further assistance!

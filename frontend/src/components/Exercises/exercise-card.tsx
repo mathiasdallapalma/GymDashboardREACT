@@ -34,14 +34,17 @@ function ExerciseCard({ exercise, size = "180px", onPlay }: ExerciseCardProps) {
             aspectRatio="1/1"
             w={size}
             mb={2}
+            minW="180px"
+            maxW="260px"
         >
+            
             <Image 
-                src={exercise.image_url || "/placeholder-exercise.jpg"} 
+                src={exercise.image_url || "./assets/images/placeholder.png"}
                 alt={exercise.title} 
                 w="full" 
                 h="60%" 
                 objectFit="cover" 
-                bg="yellow" 
+                bg="gray.800" 
             />
             
                 <IconButton
@@ -68,7 +71,7 @@ function ExerciseCard({ exercise, size = "180px", onPlay }: ExerciseCardProps) {
                     </Flex>
                     <Flex align="center" gap={1} justify="center" w="40%" >
                         <Icon as={FaFire} color={getDifficultyColor(exercise.difficulty)} />
-                        <Text fontSize="xs" fontStyle="initial">{exercise.difficulty.toUpperCase() || "-"}</Text>
+                        <Text fontSize="xs" fontStyle="initial">{exercise.difficulty?.toUpperCase() || "-"}</Text>
                     </Flex>
                 </HStack>
             </Box>

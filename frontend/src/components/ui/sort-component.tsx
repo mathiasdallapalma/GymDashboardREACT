@@ -26,6 +26,7 @@ interface SortComponentProps {
   sortOptions?: SortOption[];
   size?: "xs" | "sm" | "md" | "lg";
   gap?: number;
+  w?: string;
 }
 
 const defaultSortOptions: SortOption[] = [

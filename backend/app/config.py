@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     USE_FIREBASE: bool = True
     FIREBASE_PROJECT_ID: Union[str, None] = None
     FIREBASE_CREDENTIALS_PATH: Union[str, None] = None
+    FIRST_SUPERUSER_ID: str="superuser"
     
     # PostgreSQL Configuration (Legacy)
     POSTGRES_SERVER: str

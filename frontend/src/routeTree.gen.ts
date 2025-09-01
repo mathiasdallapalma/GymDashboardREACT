@@ -18,16 +18,19 @@ import { Route as LoginImport } from './routes/login'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
 import { Route as LayoutUsersImport } from './routes/_layout/users'
+import { Route as LayoutUserImport } from './routes/_layout/user'
 import { Route as LayoutTemplateImport } from './routes/_layout/template'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
 import { Route as LayoutProfileImport } from './routes/_layout/profile'
 import { Route as LayoutPrivacyImport } from './routes/_layout/privacy'
+import { Route as LayoutNewuserImport } from './routes/_layout/new_user'
 import { Route as LayoutItemsImport } from './routes/_layout/items'
 import { Route as LayoutHelpImport } from './routes/_layout/help'
 import { Route as LayoutExercisesImport } from './routes/_layout/exercises'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
 import { Route as LayoutActivityImport } from './routes/_layout/activity'
-import { Route as LayoutUserUserIdImport } from './routes/_layout/user.$userId'
+import { Route as LayoutUserUserIdProfileImport } from './routes/_layout/user.$userId.profile'
+import { Route as LayoutUserUserIdActivityImport } from './routes/_layout/user.$userId.activity'
 
 // Create/Update Routes
 
@@ -66,6 +69,11 @@ const LayoutUsersRoute = LayoutUsersImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutUserRoute = LayoutUserImport.update({
+  path: '/user',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
 const LayoutTemplateRoute = LayoutTemplateImport.update({
   path: '/template',
   getParentRoute: () => LayoutRoute,
@@ -83,6 +91,11 @@ const LayoutProfileRoute = LayoutProfileImport.update({
 
 const LayoutPrivacyRoute = LayoutPrivacyImport.update({
   path: '/privacy',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutNewuserRoute = LayoutNewuserImport.update({
+  path: '/new_user',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -111,9 +124,14 @@ const LayoutActivityRoute = LayoutActivityImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
-const LayoutUserUserIdRoute = LayoutUserUserIdImport.update({
-  path: '/user/$userId',
-  getParentRoute: () => LayoutRoute,
+const LayoutUserUserIdProfileRoute = LayoutUserUserIdProfileImport.update({
+  path: '/$userId/profile',
+  getParentRoute: () => LayoutUserRoute,
+} as any)
+
+const LayoutUserUserIdActivityRoute = LayoutUserUserIdActivityImport.update({
+  path: '/$userId/activity',
+  getParentRoute: () => LayoutUserRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -160,6 +178,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutItemsImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/new_user': {
+      preLoaderRoute: typeof LayoutNewuserImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/privacy': {
       preLoaderRoute: typeof LayoutPrivacyImport
       parentRoute: typeof LayoutImport
@@ -176,6 +198,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutTemplateImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/user': {
+      preLoaderRoute: typeof LayoutUserImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/users': {
       preLoaderRoute: typeof LayoutUsersImport
       parentRoute: typeof LayoutImport
@@ -184,9 +210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexImport
       parentRoute: typeof LayoutImport
     }
-    '/_layout/user/$userId': {
-      preLoaderRoute: typeof LayoutUserUserIdImport
-      parentRoute: typeof LayoutImport
+    '/_layout/user/$userId/activity': {
+      preLoaderRoute: typeof LayoutUserUserIdActivityImport
+      parentRoute: typeof LayoutUserImport
+    }
+    '/_layout/user/$userId/profile': {
+      preLoaderRoute: typeof LayoutUserUserIdProfileImport
+      parentRoute: typeof LayoutUserImport
     }
   }
 }
@@ -200,13 +230,17 @@ export const routeTree = rootRoute.addChildren([
     LayoutExercisesRoute,
     LayoutHelpRoute,
     LayoutItemsRoute,
+    LayoutNewuserRoute,
     LayoutPrivacyRoute,
     LayoutProfileRoute,
     LayoutSettingsRoute,
     LayoutTemplateRoute,
+    LayoutUserRoute.addChildren([
+      LayoutUserUserIdActivityRoute,
+      LayoutUserUserIdProfileRoute,
+    ]),
     LayoutUsersRoute,
     LayoutIndexRoute,
-    LayoutUserUserIdRoute,
   ]),
   LoginRoute,
   RecoverPasswordRoute,

@@ -52,7 +52,7 @@ function ProfileSection() {
   );
 
   const baseMenuItems = [
-    { label: "Profile", icon: FaUser, href: `/user/${user?.id}` },
+    { label: "Profile", icon: FaUser, href: `/user/${user?.id}/profile` },
     { label: "Exercises", icon: FaStar, href: "/exercises" },
     { label: "Calendar", icon: FaCalendarAlt, href: "/activity" },
   ];
@@ -87,7 +87,7 @@ function ProfileSection() {
         <VStack mt={4}>
           <Avatar.Root w="150px" h="150px">
             <Avatar.Fallback name={user?.full_name || "User"} />
-            <Avatar.Image src={user?.avatar_url || "https://avatar.iran.liara.run/public"} />
+            <Avatar.Image src="https://avatar.iran.liara.run/public" />
           </Avatar.Root>
           <Text fontSize="lg" fontWeight="bold" color="white">
             {user?.full_name}
@@ -106,7 +106,8 @@ function ProfileSection() {
           borderRadius="xl"
           mx={4}
           display="flex"
-          w="80%"
+          w={{ sm: "80%", md: "500px" }}
+          minW="300px"
         >
           <VStack flexGrow={1} gap={0} className="asd">
             <Text fontWeight="bold" color="white">
@@ -137,7 +138,10 @@ function ProfileSection() {
         </HStack>
       </Flex>
       {/* Menu */}
-      <VStack align="stretch" flex="1" mt={4} >
+      <VStack align="stretch" flex="1" mt={4}
+      w={{ sm: "full", md: "200px" }}
+      alignSelf="center"
+      >
         {menuItems.map((item, idx) => (
           <Flex
             key={idx}

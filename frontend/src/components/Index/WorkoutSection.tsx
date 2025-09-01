@@ -1,34 +1,30 @@
-import { Box, Flex, Heading, Text, Image, Button, VStack, HStack, Icon } from "@chakra-ui/react";
+import { Box, Flex, Heading,Stack, Text, Image, Button, VStack, HStack, Icon } from "@chakra-ui/react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 
 import ExerciseCard from "@/components/Exercises/exercise-card";
 import { FaPlay } from "react-icons/fa6";
+import { ActivitiesService, ExercisePublic } from "@/client";
+import useAuth from "@/hooks/useAuth";
 
 function WorkoutSection() {
-    // Example exercise objects
-    const exercises = [
-        {
-            id: "1",
-            title: "Squat Exercise",
-            duration: 12,
-            calories: 120,
-            image_url: "path.to",
-            video_url: "#",
-            difficulty: "easy",
-        },
-        {
-            id: "2",
-            title: "Full Body Stretching",
-            duration: 5,
-            calories: 100,
-            image_url: "path.to",
-            video_url: "#",
-            difficulty: "easy",
-        },
-    ];
-
+    const { user: currentUser } = useAuth();
     const navigate = useNavigate();
-    const handlePlay = (exercise) => {
+    
+    // Get today's date as string
+    const today = new Date().toDateString();
+    
+    // Fetch today's exercises
+    const { data: todayExercisesData, isLoading } = useQuery({
+        queryFn: () => ActivitiesService.getExercisesForDayApiV1({ 
+            userId: currentUser?.id || "", 
+            date: today 
+        }),
+        queryKey: ["exercises", "day", currentUser?.id, today],
+        enabled: !!currentUser?.id,
+    });
+
+    const handlePlay = (exercise: any) => {
         navigate({
             to: "/activity",
             search: { exerciseId: exercise.id }
@@ -40,7 +36,7 @@ function WorkoutSection() {
             {/* Today Section */}
             <Box mb={2}>
                 <Flex justify="space-between" align="center" mb={0}>
-                    <Heading size="md" color="lime">Today</Heading>
+                    <Heading size="md" color="white">Today</Heading>
                     <Link to="/activity" style={{ textDecoration: "none" }}>
                         <Button
                             variant="ghost"
@@ -59,17 +55,25 @@ function WorkoutSection() {
                 </Flex>
 
                 <Box overflowX="auto">
-                    <Flex gap={4} minW="fit-content" mb={4}>
-                        {exercises.map(exercise => (
-                            <ExerciseCard key={exercise.id} exercise={exercise} size="180px" onPlay={handlePlay} />
-                        ))}
+                    <Flex gap={4} minW="fit-content" my={4}>
+                        {isLoading ? (
+                            <Text color="gray.400">Loading today's exercises...</Text>
+                        ) : todayExercisesData && (todayExercisesData as ExercisePublic).exercises && (todayExercisesData as ExercisePublic).exercises.length > 0 ? (
+                            (todayExercisesData as ExercisePublic).exercises.map((exercise: any) => (
+                                <ExerciseCard key={exercise.id} exercise={exercise} size="180px" onPlay={handlePlay} />
+                            ))
+                        ) : (
+                            <Box h="8vh">
+                                <Text color="gray.400">No exercises scheduled for today</Text>
+                            </Box>
+                        )}
                     </Flex>
                 </Box>
             </Box>
 
             {/* Weekly Challenge Section */}
-            <Box
-                bg="purple.500"
+            <Stack
+                bg="purple.400"
                 position="relative"
                 left="50%"
                 transform="translateX(-50%)"
@@ -78,26 +82,32 @@ function WorkoutSection() {
                 paddingRight={7}
                 paddingLeft={7}
                 mb={4}
+                alignItems="center"
             >
-                <HStack bg="gray.800" borderRadius="3xl" align="center">
-                    <VStack align="center" justify="center">
+                <HStack bg="gray.800" borderRadius="3xl" 
+                w="fit-content"
+                >
+                    <VStack >
                         <Heading textAlign="center" size="2xl" color="lime" m={6} mb={0} mt={0}>Weekly Challenge</Heading>
-                        <Text>Plank With Hip Twist</Text>
+                        <Text>Full Body Circuit</Text>
                     </VStack>
-                    <Image w="60%" aspectRatio="6/5" src="/path/to/plank-with-hip-twist.jpg" alt="Plank With Hip Twist" borderRadius="3xl" bg="yellow" />
+                    <Image 
+                    w={{ sm: "60%", md: "300px" }}
+                    aspectRatio="6/5" 
+                    src="./assets/images/Challenge.webp" alt="Full Body Circuit" borderRadius="3xl" bg="yellow" />
                 </HStack>
-            </Box>
+            </Stack>
 
             {/* Articles & Tips Section */}
             <Box>
-                <Heading size="md" color="lime" mb={1}>Articles & Tips</Heading>
+                <Heading size="md" color="white" mb={1}>Articles & Tips</Heading>
                 <Flex gap={4} >
-                    <Box borderRadius="md" flex="1">
-                        <Image src="/path/to/supplement-guide.jpg" alt="Supplement Guide" borderRadius="xl" bg="yellow" aspectRatio="1/1" />
+                    <Box borderRadius="md" flex="1" >
+                        <Image src="./assets/images/SupplementGuide.jpeg" w="200px" h="100px" alt="Supplement Guide" borderRadius="xl" bg="yellow" aspectRatio="1/1" />
                         <Text mt={2}>Supplement Guide</Text>
                     </Box>
                     <Box borderRadius="md" flex="1">
-                        <Image src="/path/to/daily-routines.jpg" alt="Daily Routines" borderRadius="xl" bg="yellow" aspectRatio="1/1" />
+                        <Image src="./assets/images/changeyourlife.jpeg" w="200px" h="100px" alt="Daily Routines" borderRadius="xl" bg="yellow" aspectRatio="1/1" />
                         <Text mt={2}>15 Quick & Effective Daily Routines...</Text>
                     </Box>
                 </Flex>

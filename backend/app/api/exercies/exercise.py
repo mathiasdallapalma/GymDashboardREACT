@@ -23,9 +23,9 @@ def read_exercises(
     session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
 ) -> Any:
     """
-    Retrieve exercises.
+    Retrieve active exercises only.
     """
-    print("Retrieving exercises")
+    print("Retrieving active exercises")
     
     if not session:
         raise HTTPException(status_code=500, detail="Database not available")
@@ -34,21 +34,24 @@ def read_exercises(
     exercises_ref = session.collection("exercises")
     
     if current_user.is_superuser:
-        # Get all exercises for superuser
-        query = exercises_ref.offset(skip).limit(limit)
+        # Get all active exercises for superuser
+        query = exercises_ref.where("is_active", "==", True).offset(skip).limit(limit)
         exercises_docs = list(query.stream())
         
-        # Get total count
-        all_exercises = list(exercises_ref.stream())
-        count = len(all_exercises)
+        # Get total count of active exercises
+        all_active_exercises = list(exercises_ref.where("is_active", "==", True).stream())
+        count = len(all_active_exercises)
     else:
-        # Get exercises only for current user
-        query = exercises_ref.where("owner_id", "==", str(current_user.id)).offset(skip).limit(limit)
+        # Get active exercises only for current user
+        query = exercises_ref.where("owner_id", "==", str(current_user.id)) \
+                           .where("is_active", "==", True) \
+                           .offset(skip).limit(limit)
         exercises_docs = list(query.stream())
         
-        # Get count for current user
-        user_exercises = list(exercises_ref.where("owner_id", "==", str(current_user.id)).stream())
-        count = len(user_exercises)
+        # Get count of active exercises for current user
+        user_active_exercises = list(exercises_ref.where("owner_id", "==", str(current_user.id))
+                                   .where("is_active", "==", True).stream())
+        count = len(user_active_exercises)
     
     # Convert Firestore documents to Exercise objects
     exercises = []
@@ -63,7 +66,7 @@ def read_exercises(
 @router.get("/{id}", response_model=ExercisePublic)
 def read_exercise(session: SessionDep, current_user: CurrentUser, id: str) -> Any:
     """
-    Get exercise by ID.
+    Get exercise by ID (only if active).
     """
     if not session:
         raise HTTPException(status_code=500, detail="Database not available")
@@ -79,8 +82,6 @@ def read_exercise(session: SessionDep, current_user: CurrentUser, id: str) -> An
     exercise_data["id"] = doc.id
     exercise = Exercise(**exercise_data)
     
-    if not current_user.is_superuser and (exercise.owner_id != str(current_user.id)):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
     
     return exercise
 
@@ -100,6 +101,10 @@ def create_exercise(
     # Create exercise data with owner_id
     exercise_data = exercise_in.model_dump()
     exercise_data["owner_id"] = str(current_user.id)
+    
+    # Ensure is_active is set (defaults to True)
+    if "is_active" not in exercise_data:
+        exercise_data["is_active"] = True
     
     # Convert enums to their string values for Firestore
     if "category" in exercise_data and exercise_data["category"]:
@@ -149,11 +154,24 @@ def update_exercise(
     exercise_data["id"] = doc.id
     exercise = Exercise(**exercise_data)
     
+    # Check if exercise is active (unless we're updating the is_active field)
+    if not exercise.is_active and not exercise_in.is_active:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    
     if not current_user.is_superuser and (exercise.owner_id != str(current_user.id)):
         raise HTTPException(status_code=400, detail="Not enough permissions")
     
     # Update the document
     update_dict = exercise_in.model_dump(exclude_unset=True)
+    
+    # Convert enums to their string values for Firestore
+    if "category" in update_dict and update_dict["category"]:
+        update_dict["category"] = update_dict["category"].value
+    if "muscle_group" in update_dict and update_dict["muscle_group"]:
+        update_dict["muscle_group"] = update_dict["muscle_group"].value
+    if "difficulty" in update_dict and update_dict["difficulty"]:
+        update_dict["difficulty"] = update_dict["difficulty"].value
+    
     doc_ref.update(update_dict)
     
     # Get updated document
@@ -169,7 +187,7 @@ def delete_exercise(
     session: SessionDep, current_user: CurrentUser, id: str
 ) -> Message:
     """
-    Delete an exercise.
+    Soft delete an exercise by setting is_active to False.
     """
     if not session:
         raise HTTPException(status_code=500, detail="Database not available")
@@ -185,10 +203,14 @@ def delete_exercise(
     exercise_data = doc.to_dict()
     exercise = Exercise(**exercise_data)
     
+    # Check if exercise is already inactive
+    if not exercise.is_active:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    
     if not current_user.is_superuser and (exercise.owner_id != str(current_user.id)):
         raise HTTPException(status_code=400, detail="Not enough permissions")
     
-    # Delete the document
-    doc_ref.delete()
+    # Soft delete: set is_active to False instead of deleting the document
+    doc_ref.update({"is_active": False})
     
-    return Message(message="Exercise deleted successfully")
+    return Message(message="Exercise deactivated successfully")

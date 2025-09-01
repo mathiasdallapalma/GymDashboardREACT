@@ -21,7 +21,7 @@ import React, { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { LuX } from "react-icons/lu"
 import { HiUpload } from "react-icons/hi"
-import { type ExercisePublic, type ExerciseCategory, type MuscleGroup, type Difficulty } from "@/client"
+import { type ExercisePublic } from "@/client"
 
 interface AddUpdateExerciseDrawerProps {
   mode: 'add' | 'update';
@@ -79,7 +79,7 @@ function AddUpdateExerciseDrawer({ mode, exercise, onSubmit, onCancel }: AddUpda
   // Extract values from generated union types
   const categories = ["strength", "cardio", "flexibility", "balance", "other"] as const
   const muscleGroups = ["chest", "back", "legs", "arms", "shoulders", "core", "full_body", "other"] as const
-  const difficulties = ["beginner", "intermediate", "advanced"] as const
+  const difficulties = ["easy", "medium", "hard"] as const
 
   const onSubmitNewExercise = (data: ExercisePublic) => {
     onSubmit(data);

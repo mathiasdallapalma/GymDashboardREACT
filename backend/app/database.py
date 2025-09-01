@@ -35,12 +35,15 @@ def init_db(session: Session = None) -> None:
                 password=settings.FIRST_SUPERUSER_PASSWORD,
                 full_name="Admin",
                 mobile_number="0000000000",
+                is_active=True,
+                is_superuser=True,
                 date_of_birth=date(2000, 1, 1),
                 weight=70.0,
                 height=1.75,
                 notes="Superuser account",
                 sex="other",
-                role="admin"
+                role="admin",
+                
             )
             # Hash the password before storing in Firestore
             user_data = user_in.model_dump()
@@ -50,8 +53,14 @@ def init_db(session: Session = None) -> None:
             if user_data.get("date_of_birth"):
                 user_data["date_of_birth"] = user_data["date_of_birth"].isoformat()
             
-            users_ref.add(user_data)
+            # Use a fixed document ID for the superuser to prevent duplicates
+            superuser_doc_ref = users_ref.document("superuser")
+            superuser_doc_ref.set(user_data)
             print(f"Superuser {settings.FIRST_SUPERUSER} created in Firestore.")
         else:
             print(f"Superuser {settings.FIRST_SUPERUSER} already exists in Firestore.")
+            # Debug: Let's see what superuser documents exist
+            all_superusers = list(query.stream())
+            for doc in all_superusers:
+                print(f"Found superuser doc ID: {doc.id}, hash: {doc.to_dict().get('hashed_password', 'NO_HASH')}")
    

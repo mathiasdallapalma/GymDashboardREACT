@@ -4,36 +4,26 @@ import {
   Heading,
   HStack,
   Text,
-  Image,
-  EmptyState,
-  VStack,
-  Box,
-  Icon,
-  IconButton
-
   } from "@chakra-ui/react"
 import React from "react"
 
-import { IoAddCircleSharp } from "react-icons/io5";
-
 
 import { createFileRoute } from "@tanstack/react-router"
-import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query"
+import { useQueryClient, useMutation, useQuery, useQueries } from "@tanstack/react-query"
 import { z } from "zod"
-import { FiSearch } from "react-icons/fi"
-import { FaLock } from "react-icons/fa";
 
-import AddExercise from "@/components/Exercises/AddExercise"
 import ExercisesList from "@/components/Exercises/exercise-list"
-import CustomDrawer from "@/components/Common/CustomDrawer"
+
 import PendingExercises from "@/components/Pending/PendingExercises"
-import type { UserPublic } from "@/client"
+
 import useCustomToast from "@/hooks/useCustomToast"
 import { type ExerciseCreate, ExercisesService, type ExercisePublic } from "@/client"
 import type { ApiError } from "@/client/core/ApiError"
 import { handleError } from "@/utils"
 import GoBack from "@/components/ui/goback"
 import SortComponent from "@/components/ui/sort-component"
+import { set } from "react-hook-form"
+import useAuth from "@/hooks/useAuth";
 
 const exercisesSearchSchema = z.object({
   // Remove page parameter since we're loading all exercises
@@ -59,17 +49,35 @@ function Exercises() {
   // State for sorting
   const [sortBy, setSortBy] = React.useState<string>("title")
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc")
+  const { user: currentUser } = useAuth();
 
-  // Fetch all exercises from API
-  const { data, isLoading } = useQuery({
-    ...getExercisesQueryOptions(),
-    placeholderData: (prevData) => prevData,
-  })
+
+  // Fetch exercises for user role
+  let exercises: ExercisePublic[] = [];
+  let isLoading = false;
+
+  if (currentUser?.role === "user") {
+    const ex_ids = currentUser.exercises?.map((ex: any) => ex.id) || [];
+    const exerciseQueries = useQueries({
+      queries: ex_ids.map((id: string) => ({
+        queryKey: ["exercise", id],
+        queryFn: () => ExercisesService.readExerciseApiV1({ id }),
+        enabled: !!id,
+      })),
+    });
+    isLoading = exerciseQueries.some(q => q.isLoading);
+    exercises = exerciseQueries.map((q, idx) => q.data ? q.data : { id: ex_ids[idx] });
+  } else {
+    const query = useQuery({
+      ...getExercisesQueryOptions(),
+      placeholderData: (prevData) => prevData,
+    });
+    isLoading = query.isLoading;
+    exercises = query.data?.data ?? [];
+  }
 
   // State for errors
   const [error, setError] = React.useState<string | null>(null);
-
-  const exercises = data?.data ?? []
 
   // Sort exercises based on selected criteria
   const sortedExercises = React.useMemo(() => {
@@ -125,7 +133,7 @@ function Exercises() {
         duration: newExercise.duration || 0,
         difficulty: newExercise.difficulty || "easy",
         image_url: newExercise.image_url || "",
-        video_url: newExercise.video_url || "",
+        
         owner_id: "current-user", // Will be set by backend
       }
       
@@ -238,7 +246,7 @@ function Exercises() {
       duration: exerciseData.duration,
       difficulty: exerciseData.difficulty,
       image_url: exerciseData.image_url,
-      video_url: exerciseData.video_url,
+      video_url: exerciseData.video_url || "",
     }
     createMutation.mutate(createData)
   }
@@ -299,11 +307,12 @@ function Exercises() {
         <ExercisesList
           onPlay={handlePlay}
           routeFullPath={Route.fullPath}
-          exercises={sortedExercises as any} // Use sorted exercises
+          exercises={sortedExercises as any}
           showAddExercise={true}
           onAddExercise={handleAddExercise}
           onUpdateExercise={handleUpdateExercise}
           onDeleteExercise={handleDeleteExercise}
+          performance={currentUser?.role === "user" ? currentUser.exercises : undefined}
         />
       )}
     </Container >

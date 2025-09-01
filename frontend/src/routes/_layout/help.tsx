@@ -18,7 +18,9 @@ function HelpPage() {
     <>
       <Container maxW="full" p={1}>
         <GoBack />
-        <Text>hELLo I'm A tEmPLate Page!</Text>
+         <Flex p={2}  pt={12}  >
+          <Text>Help!</Text>
+        </Flex>
       </Container>
     </>
   )

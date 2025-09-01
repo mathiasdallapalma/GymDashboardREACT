@@ -10,6 +10,7 @@ from app.api.auth.login import router as login_router
 from app.api.auth.admin import router as admin_router
 from app.api.users.users import router as users_router
 from app.api.exercies.exercise import router as exercises_router
+from app.api.activities.activity import router as activities_router
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -23,20 +24,19 @@ def create_app() -> FastAPI:
     # Middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
-        allow_origin_regex=settings.CORS_ORIGINS_REGEX,
+        allow_origins=settings.all_cors_origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_methods=["*"],  # This allows ALL methods including OPTIONS
         allow_headers=["*"],
-    )
-
-    # Routers
+    )    # Routers
     app.include_router(login_router, prefix=f"{settings.API_V1_STR}", tags=["auth"])
     app.include_router(admin_router, prefix=f"{settings.API_V1_STR}/admin", tags=["admin"])
     app.include_router(users_router, prefix=f"{settings.API_V1_STR}/users", tags=["users"])
     
     app.include_router(items_router, prefix=f"{settings.API_V1_STR}/items", tags=["items"])
     app.include_router(exercises_router, prefix=f"{settings.API_V1_STR}/exercises", tags=["exercises"])
+    app.include_router(activities_router, prefix=f"{settings.API_V1_STR}/activities", tags=["activities"])
+    
     
 
     # Exception handlers
@@ -45,6 +45,32 @@ def create_app() -> FastAPI:
         return JSONResponse(
             status_code=500,
             content={"detail": "Internal server error"},
+        )
+
+    # Add 422 validation error handler for debugging
+    from fastapi.exceptions import RequestValidationError
+    
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        print(f"=== VALIDATION ERROR DEBUG ===")
+        print(f"URL: {request.url}")
+        print(f"Method: {request.method}")
+        print(f"Headers: {dict(request.headers)}")
+        
+        # Try to get the request body
+        try:
+            body = await request.body()
+            print(f"Request body: {body}")
+        except Exception as e:
+            print(f"Could not read body: {e}")
+            
+        print(f"Validation errors: {exc.errors()}")
+        print(f"Raw errors: {exc}")
+        print("=== END VALIDATION ERROR ===")
+        
+        return JSONResponse(
+            status_code=422,
+            content={"detail": exc.errors(), "body": "Validation error"}
         )
 
     return app

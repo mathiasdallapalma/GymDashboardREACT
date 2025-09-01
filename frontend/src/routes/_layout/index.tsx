@@ -60,6 +60,7 @@ function Home() {
                   justifyContent="center"
                   gap={1} // Add spacing between the icon and text
                   minH="80px" // Ensure enough height for the icon and text
+                  w={{ sm: "full", md: "200px" }}
                   bg="transparent"
                   color="purple.400"
                   _selected={{

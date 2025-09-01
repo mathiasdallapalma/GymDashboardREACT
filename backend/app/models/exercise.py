@@ -42,9 +42,9 @@ class ExerciseBase(BaseModel):
     sets: Optional[int] = None
     duration: Optional[int] = None
     difficulty: Optional[Difficulty] = None
-    
     image_url: Optional[str] = None
     video_url: Optional[str] = None
+    is_active: bool = True
 
 
 
@@ -54,6 +54,7 @@ class ExerciseCreate(ExerciseBase):
 
 class ExerciseUpdate(ExerciseBase):
     title: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class Exercise(ExerciseBase):

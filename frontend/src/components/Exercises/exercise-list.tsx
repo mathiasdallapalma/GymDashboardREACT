@@ -9,17 +9,24 @@ import {
   Image,
   Box,
   Icon,
-  IconButton
+  IconButton,
+  NumberInput,
+  Separator
 } from "@chakra-ui/react"
 import React from "react"
 import { FiSearch, FiEdit, FiTrash2 } from "react-icons/fi"
+import FieldForm from "@/components/Users/FieldForm"
 
 import PendingExercises from "@/components/Pending/PendingExercises"
 import ExerciseCard from "@/components/Exercises/exercise-card"
 import CustomDrawer from "@/components/Common/CustomDrawer"
 import AddUpdateExerciseDrawer from "@/components/Exercises/add-update-exercise-drawer"
 import useAuth from "@/hooks/useAuth"
-import { type ExercisePublic } from "@/client"
+import { type ExercisePublic, UsersService } from "@/client"
+import { useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import type { ApiError } from "@/client/core/ApiError"
+import { handleError } from "@/utils"
 import {
   DialogActionTrigger,
   DialogBody,
@@ -40,20 +47,134 @@ interface ExercisesListProps {
   routeFullPath: string;
   exercises: ExercisePublic[];
   showAddExercise: boolean;
+  access_from_activity?: boolean;
+  selectedDate?: string; // Add selectedDate prop
   onAddExercise?: (exercise: ExercisePublic) => void;
   onUpdateExercise?: (exercise: ExercisePublic) => void;
   onDeleteExercise?: (exerciseId: string) => void;
+  performance?: any[];
 }
 
-function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExercise, onUpdateExercise, onDeleteExercise }: ExercisesListProps) {
+function ExercisesList({ 
+  onPlay, 
+  exercises, 
+  showAddExercise = false, 
+  access_from_activity = false, 
+  selectedDate,
+  onAddExercise, 
+  onUpdateExercise, 
+  onDeleteExercise,
+  performance,
+}: ExercisesListProps) {
 
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [drawerContent, setDrawerContent] = React.useState<React.ReactNode>(null);
   const { user: currentUser } = useAuth()
+  const [value, setValue] = useState("0")
+  const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
+  const queryClient = useQueryClient()
+
+  // Helper function to check if the selected date is today
+  const isToday = (dateString?: string) => {
+    if (!dateString) return false;
+    const selectedDate = new Date(dateString);
+    const today = new Date();
+    
+    // Set time to start of day for accurate comparison
+    selectedDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    
+    return selectedDate.getTime() === today.getTime();
+  };
+
+  // Mutation for updating exercise performance
+  const updatePerformanceMutation = useMutation({
+    mutationFn: (data: { exercise_id: string; date: string; performance: number }) =>
+      UsersService.updateExercisePerformanceApiV1({
+        requestBody: data
+      }),
+    onSuccess: () => {
+      // Optionally refresh user data or show success message
+      queryClient.invalidateQueries({ queryKey: ["users", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["exercises", "day"] });
+    },
+    onError: (err: ApiError) => {
+      handleError(err);
+      console.error("Failed to update exercise performance:", err);
+    },
+  });
+
+  // Function to get current performance for an exercise on the selected date
+  const getCurrentPerformance = (exerciseId: string): string => {
+    console.log("Getting current performance for exercise:", exerciseId);
+    console.log("Selected date:", selectedDate);
+    if (!selectedDate || !currentUser?.exercises) return "1";
+    
+    // Find the exercise in user's exercises array
+    const userExercise = currentUser.exercises.find(ex => ex.id === exerciseId);
+    if (!userExercise || !userExercise.performance) return "2";
+    
+    // Get performance for the selected date
+    const performanceValue = userExercise.performance[selectedDate];
+    console.log("Current performance value:", performanceValue);
+    return performanceValue ? performanceValue.toString() : "0";
+  };
+
+    // Helper to get performance for an exercise
+  const getPerformanceValue = (exerciseId: string) => {
+
+    if (!performance) return undefined;
+    const perfObj = performance.find((ex) => ex.id === exerciseId);
+    if (!perfObj || !perfObj.performance) return undefined;
+    const dates = Object.keys(perfObj.performance);
+    if (dates.length === 0) return undefined;
+    // Sort dates as actual dates
+    const sortedDates = dates.sort((a, b) => {
+      const da = new Date(a);
+      const db = new Date(b);
+      return da.getTime() - db.getTime();
+    });
+    const latestDate = sortedDates[sortedDates.length - 1];
+
+    return perfObj.performance[latestDate];
+  };
+
+  // Function to update exercise performance
+  const updateExercisePerformance = (exerciseId: string, performance: number) => {
+    if (!selectedDate) return;
+
+    // Update local currentUser.exercises so UI reflects change immediately
+    if (currentUser?.exercises) {
+      const updatedExercises = currentUser.exercises.map((ex: any) => {
+        if (ex.id === exerciseId) {
+          return {
+            ...ex,
+            performance: {
+              ...(ex.performance || {}),
+              [selectedDate]: performance,
+            },
+          };
+        }
+        return ex;
+      });
+      
+      currentUser.exercises = updatedExercises;
+      setValue(performance.toString());
+    }
+
+    // Update local input value for the control
+    setInputValues(prev => ({ ...prev, [exerciseId]: String(performance) }));
+
+    updatePerformanceMutation.mutate({
+      exercise_id: exerciseId,
+      date: selectedDate,
+      performance: performance
+    });
+  };
 
   // Check if user is trainer or admin using proper typing
   const isTrainerOrAdmin = currentUser && (
-    currentUser.role === "admin" || 
+    currentUser.role === "admin" ||
     currentUser.role === "trainer"
   );
 
@@ -82,23 +203,23 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
 
   const onSubmitNewExercise = (data: any) => {
     console.log("New exercise data:", data);
-    
+
     // Call the parent's onAddExercise function if provided
     if (onAddExercise) {
       onAddExercise(data); // Pass the raw form data to parent
     }
-        
+
     setDrawerOpen(false);
   };
 
   const onSubmitUpdateExercise = (data: any) => {
     console.log("Update exercise data:", data);
-    
+
     // Call the parent's onUpdateExercise function if provided
     if (onUpdateExercise) {
       onUpdateExercise(data); // Pass the raw form data to parent
     }
-        
+
     setDrawerOpen(false);
   };
 
@@ -106,11 +227,12 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
     setDrawerContent(
       <Flex direction="column" gap={4} p={4} position="relative">
         {/* Action Icons in top right corner */}
-        <HStack position="absolute" top="2" right="2" gap={2}>
-          {/* Edit Icon */}
-          <IconButton
-            aria-label="Edit Exercise"
-            size="sm"
+        {isTrainerOrAdmin && (
+          <HStack position="absolute" top="2" right="2" gap={2}>
+            {/* Edit Icon */}
+            <IconButton
+              aria-label="Edit Exercise"
+              size="sm"
             bg="gray.800"
             color="white"
             borderRadius="full"
@@ -145,7 +267,7 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
               </DialogHeader>
               <DialogBody>
                 <Text>
-                  Are you sure you want tdwdadwao delete "{exercise.title}"? This action cannot be undone.
+                  Are you sure you want to delete "{exercise.title}"? This action cannot be undone.
                 </Text>
               </DialogBody>
               <DialogFooter>
@@ -153,7 +275,7 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
                   <Button color="green" borderRadius="full" variant="outline">Cancel</Button>
                 </DialogActionTrigger>
                 <DialogActionTrigger asChild>
-                  <Button 
+                  <Button
                     bg="red.500"
                     borderRadius="full"
                     onClick={() => {
@@ -171,25 +293,103 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
             </DialogContent>
           </DialogRoot>
         </HStack>
+      )}
 
-        <Heading size="lg" text-overflow="clip" color="lime">{exercise.title} </Heading>
-        <HStack gap={3} w="80%" justifyContent="right">
+        <Heading size="lg" text-overflow="clip" color="white">{exercise.title} </Heading>
+        <HStack gap={3} justifyContent="center">
           {exercise.duration && (
-            <Text w="1/3" fontSize="sm" color="purple.400">{exercise.duration} Mins</Text>
+            <HStack>
+              <VStack gap={1} align="center">
+                <Text fontSize={{ sm: "xs", md: "sm" }} color="lime">Duration:</Text>
+                <Text fontSize={{ sm: "sm", md: "md" }} color="white" fontWeight="bold">
+                  {exercise.duration} Mins
+                </Text>
+              </VStack>
+               <Separator orientation="vertical" height="50px" w="2px" size="md" color="gray.600" />
+            </HStack>
           )}
           {exercise.reps && (
-            <Text w="1/3" fontSize="sm" color="lime">{exercise.sets} x {exercise.reps} </Text>
+            <HStack>
+            <VStack gap={1} align="center">
+              <Text fontSize={{ sm: "xs", md: "sm" }} color="lime">Sets & Reps:</Text>
+              <Text fontSize={{ sm: "sm", md: "md" }} color="white" fontWeight="bold">
+                {exercise.sets} x {exercise.reps}
+              </Text>
+            </VStack>
+            <Separator orientation="vertical" height="50px" w="2px" size="md" color="gray.600" />
+          </HStack>
+
           )}
-          {exercise.weight && (
-            <Text w="1/3" fontSize="sm" color="orange.400">{exercise.weight}KG</Text>
+          {access_from_activity && isToday(selectedDate) && (
+            <VStack gap={1} align="center">
+              <Text fontSize="xs" color="lime">Performance:</Text>
+              <NumberInput.Root 
+                size="sm" 
+                defaultValue={getCurrentPerformance(exercise.id)}
+                key={exercise.id}
+                min={0} 
+                max={1000}
+                width="80px"
+                onValueChange={(e) => {
+                 
+                  // Call API to update performance for today
+                  updateExercisePerformance(exercise.id, parseFloat(e.value));
+                   
+                }}
+              >
+                <NumberInput.Input 
+                  bg="gray.700" 
+                  border="1px solid" 
+                  borderColor="gray.600"
+                  color="white"
+                  textAlign="center"
+                />
+                <NumberInput.Control>
+                  <NumberInput.IncrementTrigger 
+                    bg="gray.600" 
+                    color="white"
+                    _hover={{ bg: "gray.500" }}
+                  />
+                  <NumberInput.DecrementTrigger 
+                    bg="gray.600" 
+                    color="white"
+                    _hover={{ bg: "gray.500" }}
+                  />
+                </NumberInput.Control>
+              </NumberInput.Root>
+            </VStack>
           )}
+          {access_from_activity && !isToday(selectedDate) && ( 
+            <VStack gap={1} align="center"> 
+              <Text fontSize={{ sm: "xs", md: "sm" }} color="lime">Performance:</Text>
+              <Text fontSize={{ sm: "sm", md: "md" }} color="white" fontWeight="bold">
+                {getCurrentPerformance(exercise.id)}
+              </Text>
+            </VStack>
+          )}
+          {!access_from_activity && performance && (
+            <VStack gap={1} align="center" >
+              <Text fontSize={{ sm: "xs", md: "sm" }} color="lime">Last Performance:</Text>
+              <Text fontSize={{ sm: "sm", md: "md" }} color="white" fontWeight="bold">
+                {getCurrentPerformance(exercise.id) ?? "-"}
+              </Text>
+            </VStack>
+          )}
+
+          
         </HStack>
-        <Flex bg="purple.500" p={6} justify="center" >
-          <Image borderRadius="4xl" bg="yellow" src={exercise.image_url} alt={exercise.title} aspectRatio="6/8" w="95%" />
+        <Flex bg="gray.800" p={6} justify="center" w="parent" mx={-4} >
+          <Image borderRadius="4xl" bg="gray.800"
+            src={exercise.image_url || "./assets/images/placeholder.png"}
+            alt={exercise.title}
+            aspectRatio="6/8"
+            w="95%"
+            maxW="260px" />
         </Flex>
         <Text>
           {exercise.description}
         </Text>
+
       </Flex>
     );
     setDrawerOpen(true);
@@ -211,7 +411,8 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
   return (
     <>
       <CustomDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} element={drawerContent} />
-      <Grid templateColumns="repeat(2, 1fr)" gap="3">
+      <Grid 
+      templateColumns={{ sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap="3">
         {showAddExercise && isTrainerOrAdmin && (
           <Box
             bg="gray.900"
@@ -223,7 +424,7 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
             aspectRatio="1/1"
             w="40vw"
             mb={2}
-            border="solid" 
+            border="solid"
           >
             <IconButton
               aria-label="Add Exercise"
@@ -245,9 +446,10 @@ function ExercisesList({ onPlay, exercises, showAddExercise = false, onAddExerci
           <ExerciseCard
             key={exercise.id}
             exercise={exercise}
-            size="40vw"
+            size={{ sm: "40vw", md: "260px" }}
             onPlay={handlePlay}
           />
+          
         ))}
       </Grid>
     </>

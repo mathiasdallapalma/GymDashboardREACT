@@ -19,24 +19,73 @@ def db() -> Generator[Session | None, None, None]:
     if settings.USE_FIREBASE:
         # For Firestore, we don't use SQLModel sessions
         init_db()
-        yield None
-        # Cleanup Firestore collections if needed
+        
+        # Backup initial state before tests
+        initial_state = {}
         if firestore_client:
-            # Delete test data from Firestore collections
             try:
-                # Delete items collection
+                # Backup items collection
                 items_ref = firestore_client.collection("items")
-                docs = items_ref.stream()
-                for doc in docs:
-                    doc.reference.delete()
+                items_docs = items_ref.stream()
+                initial_state["items"] = []
+                for doc in items_docs:
+                    item_data = doc.to_dict()
+                    item_data["id"] = doc.id
+                    initial_state["items"].append(item_data)
                 
-                # Delete users collection (except superuser)
+                # Backup users collection
                 users_ref = firestore_client.collection("users")
-                docs = users_ref.where("email", "!=", settings.FIRST_SUPERUSER).stream()
-                for doc in docs:
-                    doc.reference.delete()
+                users_docs = users_ref.stream()
+                initial_state["users"] = []
+                for doc in users_docs:
+                    user_data = doc.to_dict()
+                    user_data["id"] = doc.id
+                    initial_state["users"].append(user_data)
+                
+                # Backup activities collection
+                activities_ref = firestore_client.collection("activities")
+                activities_docs = activities_ref.stream()
+                initial_state["activities"] = []
+                for doc in activities_docs:
+                    activity_data = doc.to_dict()
+                    activity_data["id"] = doc.id
+                    initial_state["activities"].append(activity_data)
+                
+                # Backup exercises collection
+                exercises_ref = firestore_client.collection("exercises")
+                exercises_docs = exercises_ref.stream()
+                initial_state["exercises"] = []
+                for doc in exercises_docs:
+                    exercise_data = doc.to_dict()
+                    exercise_data["id"] = doc.id
+                    initial_state["exercises"].append(exercise_data)
+                    
             except Exception as e:
-                print(f"Error cleaning up Firestore: {e}")
+                print(f"Error backing up Firestore state: {e}")
+                initial_state = {}
+        
+        yield None
+        
+        # Restore initial state after tests
+        if firestore_client and initial_state:
+            try:
+                # Clear all collections first
+                collections_to_clear = ["items", "users", "activities", "exercises"]
+                for collection_name in collections_to_clear:
+                    collection_ref = firestore_client.collection(collection_name)
+                    docs = collection_ref.stream()
+                    for doc in docs:
+                        doc.reference.delete()
+                
+                # Restore backed up data
+                for collection_name, documents in initial_state.items():
+                    collection_ref = firestore_client.collection(collection_name)
+                    for doc_data in documents:
+                        doc_id = doc_data.pop("id")  # Remove id from data
+                        collection_ref.document(doc_id).set(doc_data)
+                        
+            except Exception as e:
+                print(f"Error restoring Firestore state: {e}")
     
 
 

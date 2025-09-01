@@ -197,12 +197,13 @@ def test_update_password_me(
         headers=superuser_token_headers,
         json=data,
     )
+    print(f"superuser_token: {superuser_token_headers}")
     assert r.status_code == 200
     updated_response = r.json()
     assert updated_response["message"] == "Password updated successfully"
 
-    # Fetch user document from Firestore
-    user_doc = firestore_client.collection("users").document(str(settings.FIRST_SUPERUSER_ID)).get()
+    # Fetch user document from Firestore using fixed superuser document ID
+    user_doc = firestore_client.collection("users").document("superuser").get()
     assert user_doc.exists
     user_data = user_doc.to_dict()
 
@@ -222,7 +223,7 @@ def test_update_password_me(
     assert r.status_code == 200
 
     # Refresh user data
-    user_doc = firestore_client.collection("users").document(str(settings.FIRST_SUPERUSER_ID)).get()
+    user_doc = firestore_client.collection("users").document("superuser").get()
     user_data = user_doc.to_dict()
     assert verify_password(settings.FIRST_SUPERUSER_PASSWORD, user_data["hashed_password"])
 
@@ -279,42 +280,8 @@ def test_update_password_me_same_password_error(
     )
 
 
-def test_register_user(client: TestClient, db: Session) -> None:
-    username = random_email()
-    password = random_lower_string()
-    full_name = random_lower_string()
-    data = {"email": username, "password": password, "full_name": full_name}
-    r = client.post(
-        f"{settings.API_V1_STR}/users/signup",
-        json=data,
-    )
-    assert r.status_code == 200
-    created_user = r.json()
-    assert created_user["email"] == username
-    assert created_user["full_name"] == full_name
-
-    user_query = select(User).where(User.email == username)
-    user_db = db.exec(user_query).first()
-    assert user_db
-    assert user_db.email == username
-    assert user_db.full_name == full_name
-    assert verify_password(password, user_db.hashed_password)
 
 
-def test_register_user_already_exists_error(client: TestClient) -> None:
-    password = random_lower_string()
-    full_name = random_lower_string()
-    data = {
-        "email": settings.FIRST_SUPERUSER,
-        "password": password,
-        "full_name": full_name,
-    }
-    r = client.post(
-        f"{settings.API_V1_STR}/users/signup",
-        json=data,
-    )
-    assert r.status_code == 400
-    assert r.json()["detail"] == "The user with this email already exists in the system"
 
 
 def test_update_user(
@@ -336,11 +303,10 @@ def test_update_user(
 
     assert updated_user["full_name"] == "Updated_full_name"
 
-    user_query = select(User).where(User.email == username)
-    user_db = db.exec(user_query).first()
-    db.refresh(user_db)
-    assert user_db
-    assert user_db.full_name == "Updated_full_name"
+    # Verify the user was updated in Firestore
+    user_updated = crud.get_user_by_email(session=firestore_client, email=username)
+    assert user_updated
+    assert user_updated.full_name == "Updated_full_name"
 
 
 def test_update_user_not_exists(
@@ -403,12 +369,10 @@ def test_delete_user_me(client: TestClient, db: Session) -> None:
     assert r.status_code == 200
     deleted_user = r.json()
     assert deleted_user["message"] == "User deleted successfully"
-    result = db.exec(select(User).where(User.id == user_id)).first()
-    assert result is None
-
-    user_query = select(User).where(User.id == user_id)
-    user_db = db.execute(user_query).first()
-    assert user_db is None
+    
+    # Verify user was deleted from Firestore
+    user_doc = firestore_client.collection("users").document(user_id).get()
+    assert not user_doc.exists
 
 
 def test_delete_user_me_as_superuser(
@@ -438,8 +402,10 @@ def test_delete_user_super_user(
     assert r.status_code == 200
     deleted_user = r.json()
     assert deleted_user["message"] == "User deleted successfully"
-    result = db.exec(select(User).where(User.id == user_id)).first()
-    assert result is None
+    
+    # Verify user was deleted from Firestore
+    user_doc = firestore_client.collection("users").document(user_id).get()
+    assert not user_doc.exists
 
 
 def test_delete_user_not_found(

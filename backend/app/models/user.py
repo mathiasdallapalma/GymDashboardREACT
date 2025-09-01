@@ -19,6 +19,17 @@ class Sex(str, Enum):
     OTHER = "other"
 
 
+# Nested models for user exercises and activities
+class UserExercise(BaseModel):
+    id: str  # Exercise ID
+    performance: dict[str, float] = {}  # Map of date string to performance value
+
+
+class UserActivity(BaseModel):
+    id: str  # Activity ID
+    date: str  # Date in format like "10/08/2025"
+
+
 # Shared properties
 class UserBase(BaseModel):
     email: EmailStr
@@ -32,6 +43,8 @@ class UserBase(BaseModel):
     notes: Optional[str] = None
     sex: Optional[Sex] = None
     role: UserRole = UserRole.USER
+    exercises: List[UserExercise] = []  # Array of user exercises with performance
+    activities: List[UserActivity] = []  # Array of user activities with dates
 
 
 # For creating a user
@@ -61,6 +74,8 @@ class UserUpdate(UserBase):
     notes: Optional[str] = None
     sex: Optional[Sex] = None
     role: Optional[UserRole] = None
+    exercises: Optional[List[UserExercise]] = None
+    activities: Optional[List[UserActivity]] = None
 
 
 # For updating own account
@@ -79,6 +94,13 @@ class UserUpdateMe(BaseModel):
 class UpdatePassword(BaseModel):
     current_password: str
     new_password: str
+
+
+# For updating exercise performance
+class UpdateExercisePerformanceRequest(BaseModel):
+    exercise_id: str
+    date: str
+    performance: float
 
 
 # Firestore database model

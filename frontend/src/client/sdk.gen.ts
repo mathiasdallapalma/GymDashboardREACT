@@ -3,7 +3,277 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { CreateUserApiV1AdminUsersPostData, CreateUserApiV1AdminUsersPostResponse, LoginApiV1GetResponse, LoginAccessTokenApiV1LoginAccessTokenPostData, LoginAccessTokenApiV1LoginAccessTokenPostResponse, TestTokenApiV1LoginTestTokenPostResponse, RecoverPasswordApiV1PasswordRecoveryEmailPostData, RecoverPasswordApiV1PasswordRecoveryEmailPostResponse, ResetPasswordApiV1ResetPasswordPostData, ResetPasswordApiV1ResetPasswordPostResponse, RecoverPasswordHtmlContentApiV1PasswordRecoveryHtmlContentEmailPostData, RecoverPasswordHtmlContentApiV1PasswordRecoveryHtmlContentEmailPostResponse, ReadExercisesApiV1ExercisesGetData, ReadExercisesApiV1ExercisesGetResponse, CreateExerciseApiV1ExercisesPostData, CreateExerciseApiV1ExercisesPostResponse, ReadExerciseApiV1ExercisesIdGetData, ReadExerciseApiV1ExercisesIdGetResponse, UpdateExerciseApiV1ExercisesIdPutData, UpdateExerciseApiV1ExercisesIdPutResponse, DeleteExerciseApiV1ExercisesIdDeleteData, DeleteExerciseApiV1ExercisesIdDeleteResponse, ReadItemsApiV1ItemsGetData, ReadItemsApiV1ItemsGetResponse, CreateItemApiV1ItemsPostData, CreateItemApiV1ItemsPostResponse, ReadItemApiV1ItemsIdGetData, ReadItemApiV1ItemsIdGetResponse, UpdateItemApiV1ItemsIdPutData, UpdateItemApiV1ItemsIdPutResponse, DeleteItemApiV1ItemsIdDeleteData, DeleteItemApiV1ItemsIdDeleteResponse, ReadUsersApiV1UsersGetData, ReadUsersApiV1UsersGetResponse, CreateUserApiV1UsersPostData, CreateUserApiV1UsersPostResponse, ReadUserMeApiV1UsersMeGetResponse, DeleteUserMeApiV1UsersMeDeleteResponse, UpdateUserMeApiV1UsersMePatchData, UpdateUserMeApiV1UsersMePatchResponse, UpdatePasswordMeApiV1UsersMePasswordPatchData, UpdatePasswordMeApiV1UsersMePasswordPatchResponse, RegisterUserApiV1UsersSignupPostData, RegisterUserApiV1UsersSignupPostResponse, ReadUserByIdApiV1UsersUserIdGetData, ReadUserByIdApiV1UsersUserIdGetResponse, UpdateUserApiV1UsersUserIdPatchData, UpdateUserApiV1UsersUserIdPatchResponse, DeleteUserApiV1UsersUserIdDeleteData, DeleteUserApiV1UsersUserIdDeleteResponse } from './types.gen';
+import type { ReadActivitiesApiV1ActivitiesGetData, ReadActivitiesApiV1ActivitiesGetResponse, CreateActivityApiV1ActivitiesPostData, CreateActivityApiV1ActivitiesPostResponse, ReadActivityApiV1ActivitiesIdGetData, ReadActivityApiV1ActivitiesIdGetResponse, UpdateActivityApiV1ActivitiesIdPutData, UpdateActivityApiV1ActivitiesIdPutResponse, DeleteActivityApiV1ActivitiesIdDeleteData, DeleteActivityApiV1ActivitiesIdDeleteResponse, AddExerciseToActivityApiV1ActivitiesIdExercisesExerciseIdPostData, AddExerciseToActivityApiV1ActivitiesIdExercisesExerciseIdPostResponse, RemoveExerciseFromActivityApiV1ActivitiesIdExercisesExerciseIdDeleteData, RemoveExerciseFromActivityApiV1ActivitiesIdExercisesExerciseIdDeleteResponse, AssignActivityToUserApiV1ActivitiesAssignActivityIdPostData, AssignActivityToUserApiV1ActivitiesAssignActivityIdPostResponse, UpdateActivityAssignmentApiV1ActivitiesAssignActivityIdPutData, UpdateActivityAssignmentApiV1ActivitiesAssignActivityIdPutResponse, UnassignActivityFromUserApiV1ActivitiesUnassignActivityIdDeleteData, UnassignActivityFromUserApiV1ActivitiesUnassignActivityIdDeleteResponse, GetExercisesForDayApiV1ActivitiesExercisesUserIdDateGetData, GetExercisesForDayApiV1ActivitiesExercisesUserIdDateGetResponse, CreateUserApiV1AdminUsersPostData, CreateUserApiV1AdminUsersPostResponse, LoginApiV1GetResponse, LoginAccessTokenApiV1LoginAccessTokenPostData, LoginAccessTokenApiV1LoginAccessTokenPostResponse, TestTokenApiV1LoginTestTokenPostResponse, RecoverPasswordApiV1PasswordRecoveryEmailPostData, RecoverPasswordApiV1PasswordRecoveryEmailPostResponse, ResetPasswordApiV1ResetPasswordPostData, ResetPasswordApiV1ResetPasswordPostResponse, RecoverPasswordHtmlContentApiV1PasswordRecoveryHtmlContentEmailPostData, RecoverPasswordHtmlContentApiV1PasswordRecoveryHtmlContentEmailPostResponse, ReadExercisesApiV1ExercisesGetData, ReadExercisesApiV1ExercisesGetResponse, CreateExerciseApiV1ExercisesPostData, CreateExerciseApiV1ExercisesPostResponse, ReadExerciseApiV1ExercisesIdGetData, ReadExerciseApiV1ExercisesIdGetResponse, UpdateExerciseApiV1ExercisesIdPutData, UpdateExerciseApiV1ExercisesIdPutResponse, DeleteExerciseApiV1ExercisesIdDeleteData, DeleteExerciseApiV1ExercisesIdDeleteResponse, ReadItemsApiV1ItemsGetData, ReadItemsApiV1ItemsGetResponse, CreateItemApiV1ItemsPostData, CreateItemApiV1ItemsPostResponse, ReadItemApiV1ItemsIdGetData, ReadItemApiV1ItemsIdGetResponse, UpdateItemApiV1ItemsIdPutData, UpdateItemApiV1ItemsIdPutResponse, DeleteItemApiV1ItemsIdDeleteData, DeleteItemApiV1ItemsIdDeleteResponse, ReadUsersApiV1UsersGetData, ReadUsersApiV1UsersGetResponse, CreateUserApiV1UsersPostData, CreateUserApiV1UsersPostResponse, ReadUserMeApiV1UsersMeGetResponse, DeleteUserMeApiV1UsersMeDeleteResponse, UpdateUserMeApiV1UsersMePatchData, UpdateUserMeApiV1UsersMePatchResponse, UpdatePasswordMeApiV1UsersMePasswordPatchData, UpdatePasswordMeApiV1UsersMePasswordPatchResponse, ReadUserByIdApiV1UsersUserIdGetData, ReadUserByIdApiV1UsersUserIdGetResponse, UpdateUserApiV1UsersUserIdPatchData, UpdateUserApiV1UsersUserIdPatchResponse, DeleteUserApiV1UsersUserIdDeleteData, DeleteUserApiV1UsersUserIdDeleteResponse, UpdateExercisePerformanceApiV1UsersMeExercisePerformancePatchData, UpdateExercisePerformanceApiV1UsersMeExercisePerformancePatchResponse } from './types.gen';
+
+export class ActivitiesService {
+    /**
+     * Read Activities
+     * Retrieve activities.
+     * If user_id is provided, get activities for that specific user.
+     * Otherwise, get activities based on current user permissions.
+     * @param data The data for the request.
+     * @param data.userId
+     * @param data.skip
+     * @param data.limit
+     * @returns ActivitiesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readActivitiesApiV1(data: ReadActivitiesApiV1ActivitiesGetData = {}): CancelablePromise<ReadActivitiesApiV1ActivitiesGetResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/activities/',
+            query: {
+                user_id: data.userId,
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Activity
+     * Create new activity.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ActivityPublic Successful Response
+     * @throws ApiError
+     */
+    public static createActivityApiV1(data: CreateActivityApiV1ActivitiesPostData): CancelablePromise<CreateActivityApiV1ActivitiesPostResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/activities/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Activity
+     * Get activity by ID.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns ActivityPublic Successful Response
+     * @throws ApiError
+     */
+    public static readActivityApiV1(data: ReadActivityApiV1ActivitiesIdGetData): CancelablePromise<ReadActivityApiV1ActivitiesIdGetResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/activities/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Activity
+     * Update an activity.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns ActivityPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateActivityApiV1(data: UpdateActivityApiV1ActivitiesIdPutData): CancelablePromise<UpdateActivityApiV1ActivitiesIdPutResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/activities/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Activity
+     * Delete an activity.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteActivityApiV1(data: DeleteActivityApiV1ActivitiesIdDeleteData): CancelablePromise<DeleteActivityApiV1ActivitiesIdDeleteResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/activities/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Add Exercise To Activity
+     * Add an exercise to an activity.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.exerciseId
+     * @returns ActivityPublic Successful Response
+     * @throws ApiError
+     */
+    public static addExerciseToActivityApiV1(data: AddExerciseToActivityApiV1ActivitiesIdExercisesExerciseIdPostData): CancelablePromise<AddExerciseToActivityApiV1ActivitiesIdExercisesExerciseIdPostResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/activities/{id}/exercises/{exercise_id}',
+            path: {
+                id: data.id,
+                exercise_id: data.exerciseId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Remove Exercise From Activity
+     * Remove an exercise from an activity.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.exerciseId
+     * @returns ActivityPublic Successful Response
+     * @throws ApiError
+     */
+    public static removeExerciseFromActivityApiV1(data: RemoveExerciseFromActivityApiV1ActivitiesIdExercisesExerciseIdDeleteData): CancelablePromise<RemoveExerciseFromActivityApiV1ActivitiesIdExercisesExerciseIdDeleteResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/activities/{id}/exercises/{exercise_id}',
+            path: {
+                id: data.id,
+                exercise_id: data.exerciseId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Assign Activity To User
+     * Assign an activity to the user's activities array with a specific date.
+     * Also updates user's exercises performance map.
+     * @param data The data for the request.
+     * @param data.activityId
+     * @param data.date
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static assignActivityToUserApiV1(data: AssignActivityToUserApiV1ActivitiesAssignActivityIdPostData): CancelablePromise<AssignActivityToUserApiV1ActivitiesAssignActivityIdPostResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/activities/assign/{activity_id}',
+            path: {
+                activity_id: data.activityId
+            },
+            query: {
+                date: data.date
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Activity Assignment
+     * Update an activity assignment date in the user's activities array.
+     * Also moves performance data from old_date to new_date for all exercises in the activity.
+     * @param data The data for the request.
+     * @param data.activityId
+     * @param data.oldDate
+     * @param data.newDate
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static updateActivityAssignmentApiV1(data: UpdateActivityAssignmentApiV1ActivitiesAssignActivityIdPutData): CancelablePromise<UpdateActivityAssignmentApiV1ActivitiesAssignActivityIdPutResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/activities/assign/{activity_id}',
+            path: {
+                activity_id: data.activityId
+            },
+            query: {
+                old_date: data.oldDate,
+                new_date: data.newDate
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Unassign Activity From User
+     * Remove an activity assignment from the user's activities array for a specific date.
+     * Also removes performance data for that date from all exercises in the activity.
+     * @param data The data for the request.
+     * @param data.activityId
+     * @param data.date
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static unassignActivityFromUserApiV1(data: UnassignActivityFromUserApiV1ActivitiesUnassignActivityIdDeleteData): CancelablePromise<UnassignActivityFromUserApiV1ActivitiesUnassignActivityIdDeleteResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/activities/unassign/{activity_id}',
+            path: {
+                activity_id: data.activityId
+            },
+            query: {
+                date: data.date
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Get Exercises For Day
+     * Retrieve exercises for a specific user on a specific date.
+     * Logic:
+     * 1. Get the user's activities array
+     * 2. Find activity assigned to the given date
+     * 3. Fetch the activity details to get exercises
+     * 4. Return the exercises list
+     * @param data The data for the request.
+     * @param data.userId
+     * @param data.date
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static getExercisesForDayApiV1(data: GetExercisesForDayApiV1ActivitiesExercisesUserIdDateGetData): CancelablePromise<GetExercisesForDayApiV1ActivitiesExercisesUserIdDateGetResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/activities/exercises/{user_id}/{date}',
+            path: {
+                user_id: data.userId,
+                date: data.date
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+}
 
 export class AdminService {
     /**
@@ -143,7 +413,7 @@ export class AuthService {
 export class ExercisesService {
     /**
      * Read Exercises
-     * Retrieve exercises.
+     * Retrieve active exercises only.
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -186,7 +456,7 @@ export class ExercisesService {
     
     /**
      * Read Exercise
-     * Get exercise by ID.
+     * Get exercise by ID (only if active).
      * @param data The data for the request.
      * @param data.id
      * @returns ExercisePublic Successful Response
@@ -231,7 +501,7 @@ export class ExercisesService {
     
     /**
      * Delete Exercise
-     * Delete an exercise.
+     * Soft delete an exercise by setting is_active to False.
      * @param data The data for the request.
      * @param data.id
      * @returns Message Successful Response
@@ -587,26 +857,6 @@ export class UsersService {
     }
     
     /**
-     * Register User
-     * Create new user without the need to be logged in.
-     * @param data The data for the request.
-     * @param data.requestBody
-     * @returns UserPublic Successful Response
-     * @throws ApiError
-     */
-    public static registerUserApiV1(data: RegisterUserApiV1UsersSignupPostData): CancelablePromise<RegisterUserApiV1UsersSignupPostResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/users/signup',
-            body: data.requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
      * Read User By Id
      * Get a specific user by id.
      * @param data The data for the request.
@@ -666,6 +916,26 @@ export class UsersService {
             path: {
                 user_id: data.userId
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Exercise Performance
+     * Update exercise performance for the current user on a specific date.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static updateExercisePerformanceApiV1(data: UpdateExercisePerformanceApiV1UsersMeExercisePerformancePatchData): CancelablePromise<UpdateExercisePerformanceApiV1UsersMeExercisePerformancePatchResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/users/me/exercise-performance',
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }

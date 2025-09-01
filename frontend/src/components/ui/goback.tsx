@@ -19,7 +19,7 @@ interface GoBackProps {
 }
 
 function GoBack({ 
-  to = "/",
+  to,
   position = "absolute",
   top = "0",
   left = "2",
@@ -34,6 +34,16 @@ function GoBack({
 }: GoBackProps) {
   const navigate = useNavigate();
 
+  const handleGoBack = () => {
+    if (to) {
+      // If a specific route is provided, navigate there
+      navigate({ to });
+    } else {
+      // Otherwise, go back to the previous page in history
+      window.history.back();
+    }
+  };
+
   return (
     <IconButton
       aria-label={ariaLabel}
@@ -47,7 +57,7 @@ function GoBack({
       color={color}
       borderRadius={borderRadius}
       _hover={{ bg: hoverBg }}
-      onClick={() => navigate({ to })}
+      onClick={handleGoBack}
     >
       <FaArrowLeft />
     </IconButton>

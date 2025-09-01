@@ -114,17 +114,22 @@ function Login() {
         </Box>
 
         {/* Form Section */}
-        <Box p={6} w="107%" m={10}>
-          <Stack spacing={4}>
+        <Box p={6} w="107%" bg="gray.800" m={10}>
+          <Stack alignItems="center">
             <Field.Root
               invalid={!!errors.username}
-            //errorText={errors.username?.message || !!error}
+              w={{ sm: "100%", md: "400px" }}
+              errorText={errors.username?.message || !!error}
             >
               <Field.Label fontSize="sm" >
                 Username or email
               </Field.Label>
-              <InputGroup w="100%" startElement={<FiMail />}>
+              <InputGroup
+                w="full"
+                startElement={<FiMail />}
+              >
                 <Input
+                
                   id="username"
                   {...register("username", {
                     required: "Username is required",
@@ -139,7 +144,9 @@ function Login() {
               </InputGroup>
             </Field.Root>
 
-            <Field.Root>
+            <Field.Root
+              w={{ sm: "100%", md: "400px" }}
+            >
               <Field.Label fontSize="sm">
                 Password
               </Field.Label>
@@ -149,6 +156,7 @@ function Login() {
                 {...register("password", passwordRules())}
                 placeholder="************"
                 errors={errors}
+                
                 bg="white"
                 color="gray.800"
                 borderRadius={15}

@@ -12,6 +12,10 @@ def create_user(*, session: Any, user_create: UserCreate) -> User:
     user_data["hashed_password"] = get_password_hash(user_data.pop("password"))
     user_data["id"] = str(uuid.uuid4())
     
+    # Convert date to string if present
+    if user_data.get("date_of_birth"):
+        user_data["date_of_birth"] = str(user_data["date_of_birth"])
+    
     # Add to Firestore
     users_ref = session.collection("users")
     doc_ref = users_ref.document(user_data["id"])
@@ -29,6 +33,10 @@ def update_user(*, session: Any, db_user: User, user_in: UserUpdate) -> User:
     if "password" in user_data:
         password = user_data.pop("password")
         user_data["hashed_password"] = get_password_hash(password)
+    
+    # Convert date to string if present
+    if "date_of_birth" in user_data and user_data["date_of_birth"] is not None:
+        user_data["date_of_birth"] = str(user_data["date_of_birth"])
     
     # Update in Firestore
     users_ref = session.collection("users")
@@ -53,6 +61,16 @@ def get_user_by_email(*, session: Any, email: str) -> User | None:
     for doc in query:
         user_data = doc.to_dict()
         user_data["id"] = doc.id  # Add document ID
+        
+        # Handle date_of_birth conversion from string to date
+        if "date_of_birth" in user_data and user_data["date_of_birth"]:
+            try:
+                from datetime import datetime
+                if isinstance(user_data["date_of_birth"], str):
+                    user_data["date_of_birth"] = datetime.strptime(user_data["date_of_birth"], "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                user_data["date_of_birth"] = None
+                
         return User(**user_data)  # Convert dict to User model
 
     return None
@@ -68,8 +86,16 @@ def authenticate(*, session: Any, email: str, password: str) -> User | None:
         print("User not found")
         return None
     
+    print(f"Stored hash: {db_user.hashed_password}")
+    print(f"Plain password: {password}")
+    
     if not verify_password(password, db_user.hashed_password):
         print("Password verification failed")
+        # Let's also test what hash we get for this password
+        from app.security import get_password_hash
+        new_hash = get_password_hash(password)
+        print(f"Hash for '{password}' would be: {new_hash}")
         return None
     
+    print("Password verification successful")
     return db_user

@@ -20,8 +20,8 @@ from app.models.user import (
     UsersPublic,
     UserUpdate,
     UserUpdateMe,
+    UpdateExercisePerformanceRequest,
 )
-
 
 
 from app.utils.email import generate_new_account_email, send_email
@@ -31,16 +31,24 @@ router = APIRouter(tags=["users"])
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
     response_model=UsersPublic,
 )
-def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
+def read_users(
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = 0,
+    limit: int = 100
+) -> Any:
     """
     Retrieve users.
     """
 
     if not session:
         raise HTTPException(status_code=500, detail="Database not available")
+    # Only allow superuser or trainer
+    if not (current_user.is_superuser or getattr(current_user, "role", None) == "trainer"):
+        raise HTTPException(status_code=403, detail="Not enough privileges")
+
 
     users_ref = session.collection("users")
 
@@ -62,14 +70,18 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
 
 @router.post(
-    "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
+    "/", response_model=UserPublic
 )
-def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
+def create_user(*, session: SessionDep, current_user: CurrentUser, user_in: UserCreate) -> Any:
     """
     Create new user.
     """
-    print(f"session: {session}")
-    print(f"user_in: {user_in}")
+    print(f"Creating user with email: {user_in.email}")
+      # Only allow superuser or trainer
+    if not (current_user.is_superuser or getattr(current_user, "role", None) == "trainer"):
+        raise HTTPException(status_code=403, detail="Not enough privileges")
+    
+    # Check if user already exists
     user = crud_user.get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(
@@ -78,6 +90,9 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
         )
 
     user = crud_user.create_user(session=session, user_create=user_in)
+    print(f"User created successfully: {user.id}")
+    
+    # Send email if enabled
     if settings.emails_enabled and user_in.email:
         email_data = generate_new_account_email(
             email_to=user_in.email, username=user_in.email, password=user_in.password
@@ -87,6 +102,7 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
             subject=email_data.subject,
             html_content=email_data.html_content,
         )
+        
     return user
 
 
@@ -110,6 +126,11 @@ def update_user_me(
                 break
 
     user_data = user_in.model_dump(exclude_unset=True)
+    
+    # Convert date to string if present
+    if "date_of_birth" in user_data and user_data["date_of_birth"] is not None:
+        user_data["date_of_birth"] = str(user_data["date_of_birth"])
+    
     user_doc_ref = users_ref.document(str(current_user.id))
 
     # Update user document with new data
@@ -166,25 +187,20 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
-    session.delete(current_user)
-    session.commit()
+    
+    # Delete user's items from Firestore
+    items_ref = session.collection("items")
+    user_items = items_ref.where("owner_id", "==", current_user.id).stream()
+    for item_doc in user_items:
+        item_doc.reference.delete()
+    
+    # Delete the user document
+    users_ref = session.collection("users")
+    users_ref.document(current_user.id).delete()
+    
     return Message(message="User deleted successfully")
 
 
-@router.post("/signup", response_model=UserPublic)
-def register_user(session: SessionDep, user_in: UserRegister) -> Any:
-    """
-    Create new user without the need to be logged in.
-    """
-    user = crud_user.get_user_by_email(session=session, email=user_in.email)
-    if user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this email already exists in the system",
-        )
-    user_create = UserCreate.model_validate(user_in)
-    user = crud_user.create_user(session=session, user_create=user_create)
-    return user
 
 
 @router.get("/{user_id}", response_model=UserPublic)
@@ -204,10 +220,10 @@ def read_user_by_id(
     user_data = doc.to_dict()
     user_data["id"] = doc.id
     user = User(**user_data)
-    
+    # Allow self, superuser, or trainer
     if user.id == current_user.id:
         return user
-    if not current_user.is_superuser:
+    if not (current_user.is_superuser or getattr(current_user, "role", None) == "trainer"):
         raise HTTPException(
             status_code=403,
             detail="The user doesn't have enough privileges",
@@ -223,19 +239,28 @@ def read_user_by_id(
 def update_user(
     *,
     session: SessionDep,
-    user_id: uuid.UUID,
+    user_id: str,
     user_in: UserUpdate,
 ) -> Any:
     """
     Update a user.
     """
+    # Get user from Firestore
+    users_ref = session.collection("users")
+    doc = users_ref.document(user_id).get()
 
-    db_user = session.get(User, user_id)
-    if not db_user:
+    if not doc.exists:
         raise HTTPException(
             status_code=404,
             detail="The user with this id does not exist in the system",
         )
+    
+    # Get current user data
+    user_data = doc.to_dict()
+    user_data["id"] = doc.id
+    db_user = User(**user_data)
+    
+    # Check email uniqueness if email is being updated
     if user_in.email:
         existing_user = crud_user.get_user_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != user_id:
@@ -243,26 +268,96 @@ def update_user(
                 status_code=409, detail="User with this email already exists"
             )
 
-    db_user = crud_user.update_user(session=session, db_user=db_user, user_in=user_in)
-    return db_user
+    # Update user using Firestore
+    updated_user = crud_user.update_user(session=session, db_user=db_user, user_in=user_in)
+    return updated_user
 
 
 @router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
 def delete_user(
-    session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
+    session: SessionDep, current_user: CurrentUser, user_id: str
 ) -> Message:
     """
     Delete a user.
     """
-    user = session.get(User, user_id)
-    if not user:
+    # Get user from Firestore
+    users_ref = session.collection("users")
+    doc = users_ref.document(user_id).get()
+    
+    if not doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
-    if user == current_user:
+    
+    # Get user data
+    user_data = doc.to_dict()
+    user_data["id"] = doc.id
+    user = User(**user_data)
+    
+    # Check if trying to delete themselves
+    if user.id == current_user.id:
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
-    statement = delete(Item).where(col(Item.owner_id) == user_id)
-    session.exec(statement)  # type: ignore
-    session.delete(user)
-    session.commit()
+    
+    # Delete user's items from Firestore (if you have items collection)
+    items_ref = session.collection("items")
+    user_items = items_ref.where("owner_id", "==", user_id).stream()
+    for item_doc in user_items:
+        item_doc.reference.delete()
+    
+    # Delete the user document
+    users_ref.document(user_id).delete()
+    
     return Message(message="User deleted successfully")
+
+
+@router.patch("/me/exercise-performance", response_model=Message)
+def update_exercise_performance(
+    *, 
+    session: SessionDep, 
+    request: UpdateExercisePerformanceRequest, 
+    current_user: CurrentUser
+) -> Any:
+    """
+    Update exercise performance for the current user on a specific date.
+    """
+    if not session:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    # Get user document
+    users_ref = session.collection("users")
+    user_doc_ref = users_ref.document(str(current_user.id))
+    user_doc = user_doc_ref.get()
+    
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_data = user_doc.to_dict()
+    current_exercises = user_data.get("exercises", [])
+    
+    # Find the exercise in user's exercises array
+    exercise_found = False
+    updated_exercises = []
+    
+    for exercise in current_exercises:
+        if isinstance(exercise, dict) and exercise.get("id") == request.exercise_id:
+            exercise_found = True
+            # Update the performance for the specific date
+            performance = exercise.get("performance", {})
+            performance[request.date] = request.performance
+            exercise["performance"] = performance
+            updated_exercises.append(exercise)
+        else:
+            updated_exercises.append(exercise)
+    
+    if not exercise_found:
+        # Exercise not found in user's exercises, add it
+        new_exercise = {
+            "id": request.exercise_id,
+            "performance": {request.date: request.performance}
+        }
+        updated_exercises.append(new_exercise)
+    
+    # Update user document with new exercises data
+    user_doc_ref.update({"exercises": updated_exercises})
+    
+    return Message(message=f"Exercise performance updated successfully for {request.date}")

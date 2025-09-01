@@ -18,7 +18,10 @@ function PrivacyPage() {
     <>
       <Container maxW="full" p={1}>
         <GoBack />
-        <Text>Privacy!</Text>
+        <Flex p={2}  pt={12}  >
+          <Text>Privacy!</Text>
+        </Flex>
+        
       </Container>
     </>
   )

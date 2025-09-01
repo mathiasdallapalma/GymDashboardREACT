@@ -1,4 +1,4 @@
-#Gym Dashboard REACT
+# Gym Dashboard REACT
   <p align="center">
     Progetto d'esame del corso di Progettazione di app REACT (2024/2025)
   <br>Università degli Studi di Verona - Prof. Graziano Pravadelli</a>

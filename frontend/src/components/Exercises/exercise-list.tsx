@@ -371,7 +371,7 @@ function ExercisesList({
             <VStack gap={1} align="center" >
               <Text fontSize={{ sm: "xs", md: "sm" }} color="lime">Last Performance:</Text>
               <Text fontSize={{ sm: "sm", md: "md" }} color="white" fontWeight="bold">
-                {getCurrentPerformance(exercise.id) ?? "-"}
+                {getPerformanceValue(exercise.id) ?? "-"}
               </Text>
             </VStack>
           )}
@@ -412,7 +412,7 @@ function ExercisesList({
     <>
       <CustomDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} element={drawerContent} />
       <Grid 
-      templateColumns={{ sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap="3">
+      templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(5, 1fr)" }} gap="3">
         {showAddExercise && isTrainerOrAdmin && (
           <Box
             bg="gray.900"
@@ -422,7 +422,7 @@ function ExercisesList({
             position="relative"
             color="white"
             aspectRatio="1/1"
-            w="40vw"
+            w={{ base: "40vw", md: "260px" }}
             mb={2}
             border="solid"
           >
@@ -446,7 +446,7 @@ function ExercisesList({
           <ExerciseCard
             key={exercise.id}
             exercise={exercise}
-            size={{ sm: "40vw", md: "260px" }}
+            size={{ base: "40vw", md: "260px" }}
             onPlay={handlePlay}
           />
           

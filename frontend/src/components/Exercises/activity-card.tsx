@@ -57,7 +57,7 @@ function ActivityCard({ activity }) {
       borderRadius="md"
       p={4}
       pb={1}
-      w="full">
+      w={{base:"full",md:"450px"}}>
       <Collapsible.Trigger w="full" alignItems="center" justifyContent="space-between">
         <HStack gap={4} pb={1}>
           {/* Random icon */}

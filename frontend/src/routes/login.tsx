@@ -109,7 +109,7 @@ function Login() {
             Welcome
           </Heading>
           <Text fontSize="sm" color="gray.300" w="80%" mx="auto">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Log in to track your workouts, monitor your progress, and stay motivated on your fitness journey.
           </Text>
         </Box>
 

@@ -92,8 +92,8 @@ function WorkoutSection() {
                         <Text>Full Body Circuit</Text>
                     </VStack>
                     <Image 
-                    w={{ sm: "60%", md: "300px" }}
-                    aspectRatio="6/5" 
+                    w={{ base:"60%",sm: "60%", md: "300px" }}
+                    //aspectRatio="6/5" 
                     src="./assets/images/Challenge.webp" alt="Full Body Circuit" borderRadius="3xl" bg="yellow" />
                 </HStack>
             </Stack>

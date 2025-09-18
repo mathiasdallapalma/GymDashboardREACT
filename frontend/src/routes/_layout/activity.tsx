@@ -16,6 +16,7 @@ import {
   Input,
   CloseButton,
   Separator,
+  Center,
 
 } from "@chakra-ui/react"
 import React, { useState } from "react"
@@ -234,14 +235,15 @@ function Activities() {
           }}
           height="fit-content"
           gap="3%"
-          w="85%"
+          w={{base:"85%",md:"50%"}}
+          justifyContent={"center"}
         >
           <SegmentGroup.Indicator />
           {days.map((day, i) => (
             <SegmentGroup.Item
               value={day.toDateString()}
               key={i}
-              w="15%"
+              w="11.8%"
               maxW={{ sm: "50px", md: "65px" }}
               aspectRatio={{ sm: "6/1", md: "10/1" }}
               px={0}
@@ -344,7 +346,12 @@ function Activities() {
 
       {/* Only show Add Activity form when no activity is assigned */}
       {addActivity && (!dayExercisesData || !dayExercisesData.activity) && isDateTodayOrFuture(selectedDay) && ( 
-        <Flex flexDirection="column" gap={3} p={4} bg="gray.800" borderRadius="md" mt={4}>
+
+        <Flex w="full" justify="center" align="center">
+        <Flex flexDirection="column" gap={3} p={4} bg="gray.800" borderRadius="md" mt={8}
+        w={{base:"full",md:"60%"}}
+        justifySelf={"center"}
+        >
           <Text color="white" fontSize="lg" mb={2}>
             Add Activity for {new Date(selectedDay).toLocaleDateString("en-US", {
               weekday: "long",
@@ -389,6 +396,7 @@ function Activities() {
           </Flex>
 
           <Separator borderColor="gray.600" size="md" />
+        </Flex>
         </Flex>
       )}
 

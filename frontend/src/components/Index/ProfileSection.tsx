@@ -139,8 +139,9 @@ function ProfileSection() {
       </Flex>
       {/* Menu */}
       <VStack align="stretch" flex="1" mt={4}
-      w={{ sm: "full", md: "200px" }}
-      alignSelf="center"
+      w={{ sm: "100%", md: "200px" }}
+      
+      alignSelf={{sm:"center"}}
       >
         {menuItems.map((item, idx) => (
           <Flex

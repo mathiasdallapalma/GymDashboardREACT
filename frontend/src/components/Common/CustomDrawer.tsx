@@ -9,7 +9,7 @@ function CustomDrawer({ open, onClose, element }) {
             position="fixed"
             top={0}
             right={open ? 0 : "-100vw"}
-            width="80%"
+            width={{base:"80%",md:"500px"}}
             height="100vh"
             bg="gray.700"
             zIndex={1400}
